@@ -2,7 +2,6 @@
 from sage.all import (
     randint,
     gcd,
-    Mod,
     discrete_log,
     ZZ
 )
@@ -27,21 +26,21 @@ def key_gen(sys_param):
         alpha = quaternion.FullRepresentInteger(3**e3*D1*D2, p)
     K = end.kernel(quaternion.involution(alpha), basis3, 3**e3, zeta2, Fp4)
     phi = E.isogeny(K, algorithm="factored")
-    images = [Mod(3**e3, 2**e2).inverse()*phi(end.action(alpha, P, zeta2, Fp4)) for P in basis2]
+    images = [ZZ(3**e3).inverse_mod(2**e2)*phi(end.action(alpha, P, zeta2, Fp4)) for P in basis2]
     images[0] = sec_key*images[0]
-    images[1] = Mod(sec_key, 2**e2).inverse()*images[1]
+    images[1] = ZZ(sec_key).inverse_mod(2**e2)*images[1]
     assert images[0].weil_pairing(images[1], 2**e2) == basis2[0].weil_pairing(basis2[1], 2**e2)**(D1*D2)
     pub_key = (phi.codomain(), images)
 
     return sec_key, pub_key
 
-def encryption(message, sys_param, pub_key):
+def encrypt(message, sys_param, pub_key):
     _, basis2, basis3, e2, e3, e5, _, _, _ = sys_param
     E0 = basis2[0].curve()
     E1, images = pub_key
 
     beta = 2*message + 1
-    beta_inv = Mod(beta, 2**e2).inverse()
+    beta_inv = ZZ(beta).inverse_mod(2**e2)
 
     # isogeny from E0 of degree 3^e2
     r, s = 0, 0
@@ -70,7 +69,7 @@ def decrypt(ciphertext, sys_param, sec_key):
 
     P1d = 5**e5*D2*P1
     Q1d = 5**e5*D2*Q1
-    P2d = 3**e3*Mod(sec_key, 2**e2).inverse()*P2
+    P2d = 3**e3*ZZ(sec_key).inverse_mod(2**e2)*P2
     Q2d = 3**e3*sec_key*Q2
 
     assert P1d.weil_pairing(Q1d, 2**e2)*P2d.weil_pairing(Q2d, 2**e2) == 1
@@ -95,10 +94,10 @@ def decrypt(ciphertext, sys_param, sec_key):
     iota = phi.codomain().isomorphism_to(basis2[0].curve())
     phi = iota*phi
     R, S = [phi(P) for P in [P1, Q1]]
-    k = Mod(3**e3, 2**e2).inverse()
-    m = ZZ(k*discrete_log(R, basis2[0], 2**e2, operation='+'))
-    md = ZZ(k*discrete_log(S, basis2[1], 2**e2, operation='+'))
-    assert Mod(m, 2**e2)*Mod(md, 2**e2) == 1
+    k = ZZ(3**e3).inverse_mod(2**e2)
+    m = ZZ(k*discrete_log(R, basis2[0], 2**e2, operation='+')) % 2**e2
+    md = ZZ(k*discrete_log(S, basis2[1], 2**e2, operation='+')) % 2**e2
+    assert (m*md) % 2**e2 == 1
     if m >= 2**(e2-1):
         m = 2**e2 - m
     return (m - 1)//2

@@ -8,12 +8,11 @@ importlib.reload(newFESTA)
 
 if __name__ == "__main__":
     args = sys.argv
+    mod_c = None
     if len(args) > 1:
         lam = int(args[1])
         if len(args) > 2:
             mod_c = float(args[2])
-        else:
-            mod_c = None
     else:
         lam = 20
     
@@ -34,7 +33,7 @@ if __name__ == "__main__":
 
     t = time.time()
     message = randint(0, 2^(e2-2))
-    ciphertext = newFESTA.encryption(message, sys_param, pub_key)
+    ciphertext = newFESTA.encrypt(message, sys_param, pub_key)
     print("Encrypt a message: %d. %.2fsec." % (message, time.time() - t))
 
     t = time.time()

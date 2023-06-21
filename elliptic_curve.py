@@ -7,11 +7,11 @@ from sage.all import (
 def point_ord(E, l, e):
     assert is_prime(l)
     p = E.base_ring().characteristic()
-    assert E.order() == (p + 1)**2
     assert (p + 1) % l**e == 0
     P = (p + 1)//(l**e)*E.random_point()
     while (l**(e-1)*P).is_zero():
         P = (p + 1)//(l**e)*E.random_point()
+    assert (l**e*P).is_zero()
     return P
 
 # return a basis of E[l^e], where l is prime.
