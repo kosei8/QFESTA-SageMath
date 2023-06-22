@@ -67,13 +67,13 @@ def encrypt(message, sys_param, pub_key):
     P1, Q1 = NonSmoothRandomIsog(zeta2, Fp4, a, D2, P, Q)
 
     # isogeny from E1 of degree 3^b
-    E = E1
+    zeta3 = (-1 + E1.base_ring()(-3).sqrt())/2
     P2, Q2 = images
-    for _ in range(b):
-        K = ec.point_ord(E, 3, 1)
-        phi = E.isogeny(K)
-        E = phi.codomain()
-        P2, Q2 = phi(P2), phi(Q2)
+    E, P2, Q2 = ec.chain_3radials(E1, P2, Q2, zeta3, b)
+
+    # for richelot computation
+    iota = E.isomorphism_to(E.short_weierstrass_model())
+    P2, Q2 = iota(P2), iota(Q2)
 
     return beta*P1, beta_inv*Q1, beta*P2, beta_inv*Q2
 
