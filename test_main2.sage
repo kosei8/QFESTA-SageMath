@@ -41,5 +41,3 @@ if __name__ == "__main__":
         print("Success decryption. %.2fsec" % (time.time() - t))
     else:
         print("Failed!!!")
-
-    reset()
