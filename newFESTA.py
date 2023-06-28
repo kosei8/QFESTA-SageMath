@@ -51,13 +51,15 @@ def encrypt(message, sys_param, pub_key):
     P1, Q1 = [phi1(P) for P in basis2]
 
     # isogeny from E1 of degree 5^e5
-    E = E1
+    u = (-1 + (E0.base_ring()(5).sqrt()))/2
+    zeta5 = (u + (-u - 3).sqrt())/2
+    assert zeta5**5 == 1
     P2, Q2 = images
-    for _ in range(e5):
-        K = ec.point_ord(E, 5, 1)
-        phi = E.isogeny(K)
-        E = phi.codomain()
-        P2, Q2 = phi(P2), phi(Q2)
+    E, P2, Q2 = ec.chain_5radials(E1, P2, Q2, zeta5, e5)
+
+    # for richelot computation
+    iota = E.isomorphism_to(E.short_weierstrass_model())
+    P2, Q2 = iota(P2), iota(Q2)
 
     return beta*P1, beta_inv*Q1, beta*P2, beta_inv*Q2
 
