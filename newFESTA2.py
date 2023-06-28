@@ -25,8 +25,8 @@ def NonSmoothRandomIsog(zeta2, Fp4, e, N, P, Q):
     alpha = [1, 0, 0, 0]
     while sum(alpha) % 2 == 1:
         alpha = quat.FullRepresentInteger(N*(2**e - N), p)
-        alphaP = End.action(alpha, P, zeta2, Fp4)
-        alphaQ = End.action(alpha, Q, zeta2, Fp4)
+    alphaP = End.action(alpha, P, zeta2, Fp4)
+    alphaQ = End.action(alpha, Q, zeta2, Fp4)
  
     assert P.weil_pairing(Q, 2**e)**((2**e - N)**2)*alphaP.weil_pairing(alphaQ, 2**e) == 1
     chain, _ = richelot.Does22ChainSplit(E0, E0, (2**e - N)*P, (2**e - N)*Q, alphaP, alphaQ, e)
