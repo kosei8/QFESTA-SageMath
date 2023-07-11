@@ -8,6 +8,7 @@ import quaternion as quat
 import endomorphism as End
 import elliptic_curve as ec
 import richelot_aux as richelot
+import d2isogeny
 
 # the image of P, Q under a random isogeny of degree N
 def NonSmoothRandomIsog(zeta2, Fp4, e, N, P, Q):
@@ -21,19 +22,12 @@ def NonSmoothRandomIsog(zeta2, Fp4, e, N, P, Q):
     assert ((2**e)*P).is_zero() and ((2**e)*Q).is_zero()
     assert ((2**(e-1))*P).weil_pairing((2**(e-1))*Q, 2) == -1
 
-    # require (0, 0) neq alpha((0, 0)) so that the first (2, 2)-isogeny does not split
-    alpha = [1, 0, 0, 0]
-    while sum(alpha) % 2 == 1:
-        alpha = quat.FullRepresentInteger(N*(2**e - N), p)
+    alpha = quat.FullRepresentInteger(N*(2**e - N), p)
     alphaP = End.action(alpha, P, zeta2, Fp4)
     alphaQ = End.action(alpha, Q, zeta2, Fp4)
  
-    assert P.weil_pairing(Q, 2**e)**((2**e - N)**2)*alphaP.weil_pairing(alphaQ, 2**e) == 1
-    chain, _ = richelot.Does22ChainSplit(E0, E0, (2**e - N)*P, (2**e - N)*Q, alphaP, alphaQ, e)
-    O = E0([0,1,0])
-    X, Y = (P, O), (Q, O)
-    for phi in chain:
-        X, Y = phi(X), phi(Y)
+    assert P.weil_pairing(Q, 2**e)**(N*(2**e - N)) == alphaP.weil_pairing(alphaQ, 2**e)
+    X, Y = d2isogeny.D2IsogenyImage(E0, E0, (2**e - N)*P, (2**e - N)*Q, alphaP, alphaQ, e, P, Q)
     Pd, Qd = X[0], Y[0]
     if not Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N:
         Pd, Qd = X[1], Y[1]
