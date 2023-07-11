@@ -53,7 +53,9 @@ def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R1, S1):
         return phi(R), phi(S)
     else:
         chain, _ = richelot.Does22ChainSplit(E1, E2, P1, Q1, P2, Q2, e)
-        return chain
+        for phi in chain:
+            R, S = phi(R), phi(S)
+        return R, S
 
 # (2,2)-isogeny from E1 times E2 with kernel 2**(e-1)*<(P1, P2), (Q1, Q2)>
 def FromProdToDim2(P1, Q1, P2, Q2, e):
@@ -104,7 +106,6 @@ def FromSpecialProdToDim2(P1, Q1, P2, Q2, e):
 
     # the product of 2-isogenies from E
     if T1.is_zero() or T2.is_zero() or S1.is_zero() or S2.is_zero():
-        print("hoge")
         h, _, _, _, _, phi = FromProdToDim2(T1, S1, T2, S2, 1)
         imP = phi([P1, P2])
         imQ = phi([Q1, Q2])
@@ -162,10 +163,10 @@ def FromSpecialProdToDim2(P1, Q1, P2, Q2, e):
             J = HyperellipticCurve(h).jacobian()
             R1, R2 = Rs
 
-            if not P1.is_zero():
+            if not R1.is_zero():
                 xR1, yR1 = R1.xy()
                 JR1 = J([s1 * x**2 + s2 - xR1, Rx(yR1 * s1inv)])
-            if not P2.is_zero():
+            if not R2.is_zero():
                 xR2, yR2 = R2.xy()
                 JR2 = J([(xR2 - t2) * x**2 - t1, yR2 * x**3 * t1inv])
             if R1.is_zero():

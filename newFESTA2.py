@@ -88,11 +88,7 @@ def decrypt(ciphertext, sys_param, sec_key, pub_key):
     Q2d = D2*sec_key*Q2
 
     assert P1d.weil_pairing(Q1d, 2**a)*P2d.weil_pairing(Q2d, 2**a) == 1
-    chain, _ = richelot.Does22ChainSplit(E1, E2, P1d, Q1d, P2d, Q2d, a)
-    O = E2([0,1,0])
-    X, Y = (P1, O), (Q1, O)
-    for phi in chain:
-        X, Y = phi(X), phi(Y)
+    X, Y = d2isogeny.D2IsogenyImage(E1, E2, P1d, Q1d, P2d, Q2d, a, P1, Q1)
     R, S = X[0], Y[0]
     if not R.curve().is_isomorphic(EA):
         R, S = X[1], Y[1]
