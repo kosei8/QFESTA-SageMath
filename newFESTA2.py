@@ -7,7 +7,6 @@ from sage.all import (
 import quaternion as quat
 import endomorphism as End
 import elliptic_curve as ec
-import richelot_aux as richelot
 import d2isogeny
 
 # the image of P, Q under a random isogeny of degree N

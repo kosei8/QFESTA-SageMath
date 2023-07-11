@@ -11,7 +11,7 @@ import quaternion
 import endomorphism as end
 import elliptic_curve as ec
 import parameter_generate as pgen
-import richelot_aux as richelot
+import d2isogeny
 
 def key_gen(sys_param):
     Fp4, basis2, basis3, e2, e3, _, D1, D2, zeta2 = sys_param
@@ -75,12 +75,8 @@ def decrypt(ciphertext, sys_param, sec_key):
     Q2d = 3**e3*sec_key*Q2
 
     assert P1d.weil_pairing(Q1d, 2**e2)*P2d.weil_pairing(Q2d, 2**e2) == 1
-    chain, _ = richelot.Does22ChainSplit(E1, E2, P1d, Q1d, P2d, Q2d, e2)
     R, S = ec.basis(E1, 3, e3)
-    P = E2([0,1,0])
-    X, Y = (R, P), (S, P)
-    for phi in chain:
-        X, Y = phi(X), phi(Y)
+    X, Y = d2isogeny.D2IsogenyImage(E1, E2, P1d, Q1d, P2d, Q2d, e2, R, S)
     Rd, Sd = X[0], Y[0]
     if not Rd.weil_pairing(Sd, 3**e3) == 1:
         Rd, Sd = X[1], Y[1]
