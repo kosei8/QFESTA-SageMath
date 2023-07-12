@@ -8,6 +8,7 @@ from sage.all import (
 )
 
 # return a point on E of order l^e, where l is prime.
+# Assume E is a supersingular elliptic curve s.t. E(Fp^2) = (Z/(p+1)Z)^2
 def point_ord(E, l, e):
     assert is_prime(l)
     p = E.base_ring().characteristic()
@@ -151,3 +152,37 @@ def chain_5radials(E, P, Q, zeta5, n):
         Q = -Q
     assert (P + Q)[0] == xs[2]
     return E, P, Q
+
+# return the Montgomery curve isomorphic to E s.t. the image of an order-4 point T4 is (1, *)
+def WeierstrassToMontgomery(E, T4, Ps=[]):
+    assert (4*T4).is_zero() and not (2*T4).is_zero()
+    x4, _ = T4.xy()
+    x2, _ = (2*T4).xy()
+    u = 1/(x4 - x2)
+    v = u.sqrt()**3   # if E[4] defined over the base field sqrt of u is in the base field.
+    A = (E.a2() + (E.a1()/2)**2 + 3*x2) * u
+    Mont = EllipticCurve(E.base_ring(), [0, A, 0, 1, 0])
+    assert E.j_invariant() == Mont.j_invariant()
+    imPs = []
+    for P in Ps:
+        if P.is_zero():
+            imPs.append(Mont([0,1,0]))
+        else:
+            x, y = P.xy()
+            imPs.append(Mont([(x - x2) * u, (y + E.a1()/2 * x + E.a3()/2) * v]))
+    return Mont, imPs
+
+# return a random Montgomery curve isomorphic to E
+def RandomMontgomery(E, P4, Q4, Ps=[]):
+    assert P4.weil_pairing(Q4, 4).multiplicative_order() == 4
+
+    # choose random one of the 6 possible generators of the order-4 subgroup of E
+    r = randint(0, 5)
+    if r < 4:
+        T4 = P4 + r*Q4
+    elif r == 4:
+        T4 = 2*P4 + Q4
+    else:
+        T4 = Q4
+
+    return WeierstrassToMontgomery(E, T4, Ps)

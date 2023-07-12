@@ -39,12 +39,16 @@ def key_gen(sys_param):
     # secret key
     sec_key = 2*randint(0, 2**(a-1)) + 1
 
-    #public key
+    # public key
     P, Q = basis2
     Pd, Qd = NonSmoothRandomIsog(zeta2, Fp4, a, D1, P, Q)
+
+    # transform to a random Montgomery curve
+    EA, PQ = ec.RandomMontgomery(Pd.curve(), 2**(a-2)*Pd, 2**(a-2)*Qd, [Pd, Qd])
+    Pd, Qd = PQ
     Pd = sec_key*Pd
     Qd = ZZ(sec_key).inverse_mod(2**a)*Qd
-    pub_key = Pd.curve(), [Pd, Qd]
+    pub_key = EA, [Pd, Qd]
 
     return sec_key, pub_key
 
@@ -64,9 +68,11 @@ def encrypt(message, sys_param, pub_key):
     P2, Q2 = images
     E, P2, Q2 = ec.chain_3radials(E1, P2, Q2, zeta3, b)
 
-    # for richelot computation
-    iota = E.isomorphism_to(E.short_weierstrass_model())
-    P2, Q2 = iota(P2), iota(Q2)
+    # transform to a random Montgomery curve
+    _, PQ = ec.RandomMontgomery(P1.curve(), 2**(a-2)*P1, 2**(a-2)*Q1, [P1, Q1])
+    P1, Q1 = PQ
+    _, PQ = ec.RandomMontgomery(E, 2**(a-2)*P2, 2**(a-2)*Q2, [P2, Q2])
+    P2, Q2 = PQ
 
     return beta*P1, beta_inv*Q1, beta*P2, beta_inv*Q2
 

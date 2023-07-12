@@ -52,6 +52,14 @@ def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R1, S1):
         phi, _ = richelot.FromJacToProd(G1, G2, G3)
         return phi(R), phi(S)
     else:
+        P12 = 2**(e-1)*P1
+        P22 = 2**(e-1)*P2
+        Q12 = 2**(e-1)*Q1
+        Q22 = 2**(e-1)*Q2
+        R1 = P12 + Q12
+        R2 = P22 + Q22
+        if P12[0] == P22[0] == 0 or Q12[0] == Q22[0] == 0 or R1[0] == R2[0] == 0:
+            print("hoge")
         chain, _ = richelot.Does22ChainSplit(E1, E2, P1, Q1, P2, Q2, e)
         for phi in chain:
             R, S = phi(R), phi(S)
