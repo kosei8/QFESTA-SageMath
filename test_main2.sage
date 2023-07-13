@@ -1,6 +1,5 @@
 import importlib, sys, time
 import parameter_generate as param
-import parameter_generate_new as param_new
 import elliptic_curve as ec
 import newFESTA2
 importlib.reload(ec)
@@ -15,7 +14,7 @@ if __name__ == "__main__":
         lam = 20
 
     t = time.time()
-    a, b, f, k, D1, D2 = param_new.SysParam(lam)
+    a, b, f, k, D1, D2 = param.SysParam(lam)
     p = 2**a*3*f - 1
     Fp4, Fp2, i = param.calcFields(p)
 
