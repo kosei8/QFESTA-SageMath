@@ -172,6 +172,7 @@ def WeierstrassToMontgomery(E, T4, Ps=[]):
             imPs.append(Mont([(x - x2) * u, (y + E.a1()/2 * x + E.a3()/2) * v]))
     return Mont, imPs
 
+"""
 # return a random Montgomery curve isomorphic to E
 def RandomMontgomery(E, P4, Q4, Ps=[]):
     assert P4.weil_pairing(Q4, 4).multiplicative_order() == 4
@@ -186,3 +187,4 @@ def RandomMontgomery(E, P4, Q4, Ps=[]):
         T4 = Q4
 
     return WeierstrassToMontgomery(E, T4, Ps)
+"""

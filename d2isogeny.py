@@ -39,14 +39,15 @@ def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R1, S1):
                 R, S = phi(R), phi(S)
 
         # Here, we can apply ProdToJac
+        # transform to Montgomery curves. ProdToJac requires ((0,0), (0,0)) in the kernel.
         E1, PQ1RS = ec.WeierstrassToMontgomery(P1.curve(), (2**(e-2)*P1), [P1, Q1, R[0], S[0]])
-        E2, PQ2RS = ec.WeierstrassToMontgomery(P2.curve(), (2**(e-2)*P2), [P2, Q2, R[1], R[1]])
-        R, S = [(PQ1RS[i], PQ1RS[i]) for i in range(2,4)]
+        E2, PQ2RS = ec.WeierstrassToMontgomery(P2.curve(), (2**(e-2)*P2), [P2, Q2, R[1], S[1]])
+        R, S = [(PQ1RS[i], PQ2RS[i]) for i in range(2,4)]
         strategy = utilities.optimised_strategy(e - 1)
         chain = richelot.compute_richelot_chain(PQ1RS[:2] + PQ2RS[:2], e, strategy)
         for phi in chain:
             R, S = phi(R), phi(S)
-        return phi(R), phi(S)
+        return R, S
     else:
         strategy = utilities.optimised_strategy(e - 1)
         chain = richelot.compute_richelot_chain([P1, Q1, P2, Q2], e, strategy)
