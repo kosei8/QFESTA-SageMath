@@ -1,8 +1,7 @@
 from sage.all import (
     EllipticCurve,
     randint,
-    ZZ,
-    discrete_log
+    ZZ, GF
 )
 
 import quaternion as quat
@@ -10,6 +9,8 @@ import endomorphism as End
 import elliptic_curve as ec
 import parameter_generate as param
 import d2isogeny
+import supersingular
+import compression
 
 # the image of P, Q under a random isogeny of degree N
 def NonSmoothRandomIsog(zeta2, Fp4, e, N, P, Q):
@@ -39,7 +40,7 @@ def NonSmoothRandomIsog(zeta2, Fp4, e, N, P, Q):
 def setup(lam):
     sys_param = dict()
     a, b, f, k, D1, D2 = param.SysParam(lam)
-    p = 2**a*3*f - 1
+    p = ZZ(2**a*3*f - 1)
     Fp4, Fp2, i = param.calcFields(p)
 
     E0 = EllipticCurve(Fp2, [1, 0])
@@ -55,6 +56,13 @@ def setup(lam):
     sys_param["Fp4"] = Fp4
     sys_param["zeta2"] = i
     sys_param["2t_basis"] = basis2
+
+    # for compression
+    sys_param["cofactor"] = ZZ((p + 1) / 2**a)
+    sys_param["p_byte_len"] = (p.nbits() + 7)//8
+    sys_param["l_power_byte_len"] = (a.nbits() + 7)//8
+    sys_param["pk_bytes"] = 2*sys_param["p_byte_len"] + 3*sys_param["l_power_byte_len"]
+    sys_param["elligator"] = supersingular.precompute_elligator_tables(Fp2)
 
     return sys_param
 
@@ -78,6 +86,12 @@ def key_gen(sys_param):
     Pd = sec_key*Pd
     Qd = ZZ(sec_key).inverse_mod(2**a)*Qd
     pub_key = EA, [Pd, Qd]
+
+    byte = compression.compress_curve_and_two_torsion_basis(
+        EA, Pd, Qd, a, sys_param["elligator"], sys_param["cofactor"], [],
+        sys_param["p_byte_len"], sys_param["l_power_byte_len"]
+    )
+    print(byte)
 
     return sec_key, pub_key
 
