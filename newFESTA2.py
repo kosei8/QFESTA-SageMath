@@ -1,4 +1,5 @@
 from sage.all import (
+    EllipticCurve,
     randint,
     ZZ,
     discrete_log
@@ -7,6 +8,7 @@ from sage.all import (
 import quaternion as quat
 import endomorphism as End
 import elliptic_curve as ec
+import parameter_generate as param
 import d2isogeny
 
 # the image of P, Q under a random isogeny of degree N
@@ -34,8 +36,35 @@ def NonSmoothRandomIsog(zeta2, Fp4, e, N, P, Q):
 
     return Pd, Qd
 
+def setup(lam):
+    sys_param = dict()
+    a, b, f, k, D1, D2 = param.SysParam(lam)
+    p = 2**a*3*f - 1
+    Fp4, Fp2, i = param.calcFields(p)
+
+    E0 = EllipticCurve(Fp2, [1, 0])
+    basis2 = ec.basis(E0, 2, a)
+
+    sys_param["p"] = p
+    sys_param["a"] = a
+    sys_param["b"] = b
+    sys_param["f"] = f
+    sys_param["k"] = k
+    sys_param["D1"] = D1
+    sys_param["D2"] = D2
+    sys_param["Fp4"] = Fp4
+    sys_param["zeta2"] = i
+    sys_param["2t_basis"] = basis2
+
+    return sys_param
+
 def key_gen(sys_param):
-    Fp4, basis2, a, _, _, D1, _, zeta2 = sys_param
+    Fp4 = sys_param["Fp4"]
+    basis2 = sys_param["2t_basis"]
+    a = sys_param["a"]
+    D1 = sys_param["D1"]
+    zeta2 = sys_param["zeta2"]
+
     # secret key
     sec_key = 2*randint(0, 2**(a-1)) + 1
 
@@ -53,7 +82,12 @@ def key_gen(sys_param):
     return sec_key, pub_key
 
 def encrypt(message, sys_param, pub_key):
-    Fp4, basis2, a, b, _, _, D2, zeta2 = sys_param
+    Fp4 = sys_param["Fp4"]
+    basis2 = sys_param["2t_basis"]
+    a = sys_param["a"]
+    b = sys_param["b"]
+    D2 = sys_param["D2"]
+    zeta2 = sys_param["zeta2"]
     E1, images = pub_key
 
     beta = 2*message + 1
@@ -78,10 +112,13 @@ def encrypt(message, sys_param, pub_key):
     return beta*P1, beta_inv*Q1, beta*P2, beta_inv*Q2
 
 def decrypt(ciphertext, sys_param, sec_key, pub_key):
+    a = sys_param["a"]
+    b = sys_param["b"]
+    k = sys_param["k"]
+    D2 = sys_param["D2"]
     P1, Q1, P2, Q2 = ciphertext
     E1 = P1.curve()
     E2 = P2.curve()
-    _, _, a, b, k, _, D2, _ = sys_param
 
     EA, tmp = pub_key
     PA, QA = tmp

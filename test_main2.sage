@@ -14,23 +14,16 @@ if __name__ == "__main__":
         lam = 20
 
     t = time.time()
-    a, b, f, k, D1, D2 = param.SysParam(lam)
-    p = 2**a*3*f - 1
-    Fp4, Fp2, i = param.calcFields(p)
-
-    E0 = EllipticCurve(Fp2, [1, 0])
-    E0.set_order((p+1)^2)
-    basis2 = ec.basis(E0, 2, a)
-
-    sys_param = [Fp4, basis2, a, b, k, D1, D2, i]
-    print("Set system parameter: lam=%d, a=%d, b=%d, k=%d, f=%d. %.2fsec." % (lam, a, b, k, f, time.time() - t))
+    sys_param = newFESTA2.setup(lam)
+    print("Set system parameter: lam=%d, a=%d, b=%d, k=%d, f=%d. %.2fsec."
+          % (lam, sys_param["a"], sys_param["b"], sys_param["k"], sys_param["f"], time.time() - t))
 
     t = time.time()
     sec_key, pub_key = newFESTA2.key_gen(sys_param)
     print("Keys are generated. %.2fsec." % (time.time() - t))
 
     t = time.time()
-    message = randint(0, 2^(a-2))
+    message = randint(0, 2^(sys_param["a"]-2))
     ciphertext = newFESTA2.encrypt(message, sys_param, pub_key)
     print("Encrypt a message: %d. %.2fsec." % (message, time.time() - t))
 
