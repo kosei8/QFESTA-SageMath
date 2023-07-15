@@ -129,12 +129,37 @@ def encrypt(message, sys_param, pub_key):
 
     # transform to Montgomery curves.
     # For ProdToJac, 2^(a-1)P1, 2^(a-1)P2 should be (0 0) in the Montgomery curves.
-    _, PQ = ec.WeierstrassToMontgomery(P1.curve(), 2**(a-2)*P1, [P1, Q1])
+    E1, PQ = ec.WeierstrassToMontgomery(P1.curve(), 2**(a-2)*P1, [P1, Q1])
     P1, Q1 = PQ
-    _, PQ = ec.WeierstrassToMontgomery(P2.curve(), 2**(a-2)*P2, [P2, Q2])
+    P1, Q1 = beta*P1, beta_inv*Q1
+    E2, PQ = ec.WeierstrassToMontgomery(P2.curve(), 2**(a-2)*P2, [P2, Q2])
     P2, Q2 = PQ
+    P2, Q2 = beta*P2, beta_inv*Q2
 
-    return beta*P1, beta_inv*Q1, beta*P2, beta_inv*Q2
+    # compression
+    ciphertexts = [compression.compress_curve_and_two_torsion_basis(
+        Ei, Pi, Qi, a, sys_param["elligator"], sys_param["cofactor"], [],
+        sys_param["p_byte_len"], sys_param["l_power_byte_len"]
+    ) for Ei, Pi, Qi in [[E1, P1, Q1], [E2, P2, Q2]]]
+
+    ciphertext = ciphertexts[0] + ciphertexts[1]
+    l = sys_param["pk_bytes"]
+    E1d, P1d, Q1d = compression.decompress_curve_and_two_torsion_basis(
+        sys_param["Fp2"], ciphertext[:l], (P, Q, D2), a, sys_param["elligator"], sys_param["cofactor"], [],
+        sys_param["p_byte_len"], sys_param["l_power_byte_len"]
+    )
+    E2d, P2d, Q2d = compression.decompress_curve_and_two_torsion_basis(
+        sys_param["Fp2"], ciphertext[l:], (PA, QA, 3**b), a, sys_param["elligator"], sys_param["cofactor"], [],
+        sys_param["p_byte_len"], sys_param["l_power_byte_len"]
+    )
+    assert E1 == E1d
+    assert P1 == P1d
+    assert Q1 == Q1d
+    assert E2 == E2d
+    assert P2 == P2d
+    assert Q2 == Q2d
+
+    return ciphertexts[0] + ciphertexts[1] 
 
 def decrypt(ciphertext, sys_param, sec_key, pub_key):
     a = sys_param["a"]
@@ -143,17 +168,26 @@ def decrypt(ciphertext, sys_param, sec_key, pub_key):
     D1 = sys_param["D1"]
     D2 = sys_param["D2"]
     P, Q = sys_param["2t_basis"]
-    P1, Q1, P2, Q2 = ciphertext
-    E1 = P1.curve()
-    E2 = P2.curve()
 
+    # decompress public key
     EA, PA, QA = compression.decompress_curve_and_two_torsion_basis(
         sys_param["Fp2"], pub_key, (P, Q, D1), a, sys_param["elligator"], sys_param["cofactor"], [],
         sys_param["p_byte_len"], sys_param["l_power_byte_len"]
     )
+
+    # decompress ciphertext
+    l = sys_param["pk_bytes"]
+    E1, P1, Q1 = compression.decompress_curve_and_two_torsion_basis(
+        sys_param["Fp2"], ciphertext[:l], (P, Q, D2), a, sys_param["elligator"], sys_param["cofactor"], [],
+        sys_param["p_byte_len"], sys_param["l_power_byte_len"]
+    )
+    E2, P2, Q2 = compression.decompress_curve_and_two_torsion_basis(
+        sys_param["Fp2"], ciphertext[l:], (PA, QA, 3**b), a, sys_param["elligator"], sys_param["cofactor"], [],
+        sys_param["p_byte_len"], sys_param["l_power_byte_len"]
+    )
+
     PA = D2*ZZ(sec_key).inverse_mod(2**a)*PA
     QA = D2*sec_key*QA
-
     P1d = 3**b*k*P1
     Q1d = 3**b*k*Q1
     P2d = D2*ZZ(sec_key).inverse_mod(2**a)*P2

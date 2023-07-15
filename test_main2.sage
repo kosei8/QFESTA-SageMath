@@ -20,12 +20,12 @@ if __name__ == "__main__":
 
     t = time.time()
     sec_key, pub_key = newFESTA2.key_gen(sys_param)
-    print("Keys are generated. %.2fsec." % (time.time() - t))
+    print("Keys are generated. Pubkey %d bytes. %.2fsec." % (len(pub_key), time.time() - t))
 
     t = time.time()
     message = randint(0, 2^(sys_param["a"]-2))
     ciphertext = newFESTA2.encrypt(message, sys_param, pub_key)
-    print("Encrypt a message: %d. %.2fsec." % (message, time.time() - t))
+    print("Encrypt a message. Ciphertext %d bytes. %.2fsec." % (len(ciphertext), time.time() - t))
 
     t = time.time()
     m = newFESTA2.decrypt(ciphertext, sys_param, sec_key, pub_key)
