@@ -1,7 +1,9 @@
 from sage.all import (
     EllipticCurve,
     randint,
-    ZZ, GF
+    ZZ,
+    discrete_log,
+    GF
 )
 
 import quaternion as quat
@@ -42,7 +44,7 @@ def setup(lam):
     sys_param = dict()
     a, b, f, k, D1, D2 = param.SysParam(lam)
     p = ZZ(2**a*3*f - 1)
-    Fp4, Fp2, i = param.calcFields(p)
+    Fp4, Fp2, zeta2 = param.calcFields(p)
 
     E0 = EllipticCurve(Fp2, [1, 0])
     basis2 = ec.basis(E0, 2, a)
@@ -54,16 +56,23 @@ def setup(lam):
     sys_param["k"] = k
     sys_param["D1"] = D1
     sys_param["D2"] = D2
-    sys_param["zeta2"] = i
+    sys_param["action_matrices"] = End.action_matrices(basis2, 2**a, zeta2, Fp4)
+
+    # change base field from Fp2 to Fp2d because Fp2d.gen() should be a square root of -1 for the compression functions
+    Fp2d = GF(p**2, modulus=[1, 0, 1], name="i")
+    def Fp2ToFp2d(x):
+        return ZZ((x + x**p)/2) + ZZ((x - x**p)/(2*zeta2)) * Fp2d.gen()
+    E0 = EllipticCurve(Fp2d, [1, 0])
+    basis2 = [E0([Fp2ToFp2d(v) for v in P]) for P in basis2]
     sys_param["2t_basis"] = basis2
-    sys_param["action_matrices"] = End.action_matrices(basis2, 2**a, i, Fp4)
+    sys_param["Fp2"] = Fp2d
 
     # for compression
     sys_param["cofactor"] = ZZ((p + 1) / 2**a)
     sys_param["p_byte_len"] = (p.nbits() + 7)//8
-    sys_param["l_power_byte_len"] = (a.nbits() + 7)//8
+    sys_param["l_power_byte_len"] = (a + 7)//8
     sys_param["pk_bytes"] = 2*sys_param["p_byte_len"] + 3*sys_param["l_power_byte_len"]
-    sys_param["elligator"] = supersingular.precompute_elligator_tables(Fp2)
+    sys_param["elligator"] = supersingular.precompute_elligator_tables(Fp2d)
 
     return sys_param
 
@@ -84,13 +93,12 @@ def key_gen(sys_param):
     Pd, Qd = PQ
     Pd = sec_key*Pd
     Qd = ZZ(sec_key).inverse_mod(2**a)*Qd
-    pub_key = EA, [Pd, Qd]
 
-    byte = compression.compress_curve_and_two_torsion_basis(
+    # key compression
+    pub_key = compression.compress_curve_and_two_torsion_basis(
         EA, Pd, Qd, a, sys_param["elligator"], sys_param["cofactor"], [],
         sys_param["p_byte_len"], sys_param["l_power_byte_len"]
     )
-    print(byte)
 
     return sec_key, pub_key
 
@@ -98,9 +106,16 @@ def encrypt(message, sys_param, pub_key):
     basis2 = sys_param["2t_basis"]
     a = sys_param["a"]
     b = sys_param["b"]
+    D1 = sys_param["D1"]
     D2 = sys_param["D2"]
-    E1, images = pub_key
     action_matrices = sys_param["action_matrices"]
+
+    # decompression
+    P, Q = basis2
+    EA, PA, QA = compression.decompress_curve_and_two_torsion_basis(
+        sys_param["Fp2"], pub_key, (P, Q, D1), a, sys_param["elligator"], sys_param["cofactor"], [],
+        sys_param["p_byte_len"], sys_param["l_power_byte_len"]
+    )
 
     beta = 2*message + 1
     beta_inv = ZZ(beta).inverse_mod(2**a)
@@ -109,9 +124,8 @@ def encrypt(message, sys_param, pub_key):
     P1, Q1 = NonSmoothRandomIsog(a, D2, basis2, action_matrices)
 
     # isogeny from E1 of degree 3^b
-    zeta3 = (-1 + E1.base_ring()(-3).sqrt())/2
-    P2, Q2 = images
-    E, P2, Q2 = ec.chain_3radials(E1, P2, Q2, zeta3, b)
+    zeta3 = (-1 + EA.base_ring()(-3).sqrt())/2
+    _, P2, Q2 = ec.chain_3radials(EA, PA, QA, zeta3, b)
 
     # transform to Montgomery curves.
     # For ProdToJac, 2^(a-1)P1, 2^(a-1)P2 should be (0 0) in the Montgomery curves.
@@ -126,13 +140,17 @@ def decrypt(ciphertext, sys_param, sec_key, pub_key):
     a = sys_param["a"]
     b = sys_param["b"]
     k = sys_param["k"]
+    D1 = sys_param["D1"]
     D2 = sys_param["D2"]
+    P, Q = sys_param["2t_basis"]
     P1, Q1, P2, Q2 = ciphertext
     E1 = P1.curve()
     E2 = P2.curve()
 
-    EA, tmp = pub_key
-    PA, QA = tmp
+    EA, PA, QA = compression.decompress_curve_and_two_torsion_basis(
+        sys_param["Fp2"], pub_key, (P, Q, D1), a, sys_param["elligator"], sys_param["cofactor"], [],
+        sys_param["p_byte_len"], sys_param["l_power_byte_len"]
+    )
     PA = D2*ZZ(sec_key).inverse_mod(2**a)*PA
     QA = D2*sec_key*QA
 

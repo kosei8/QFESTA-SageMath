@@ -91,5 +91,6 @@ def SysParam(lam):
     
     f = 1
     while not is_prime(2**(2*a)*3*f - 1):
-        f += 1
+        # f should be odd for using the Tate pairing
+        f += 2
     return 2*a, 2*b, f, k, D1, D2
