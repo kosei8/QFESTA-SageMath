@@ -12,20 +12,21 @@ import parameter_generate as param
 import d2isogeny
 
 # the image of P, Q under a random isogeny of degree N
-def NonSmoothRandomIsog(zeta2, Fp4, e, N, P, Q):
-    Fp2 = zeta2.base_ring()
-    p = Fp2.characteristic()
+def NonSmoothRandomIsog(e, N, basis2, action_matrices):
+    P, Q = basis2
     E0 = P.curve()
+    p = E0.base_ring().characteristic()
     assert N % 2 == 1
     assert 2**e > N
     assert (p + 1) % 2**e == 0
-    assert Fp2.is_subring(Fp4)
     assert ((2**e)*P).is_zero() and ((2**e)*Q).is_zero()
     assert ((2**(e-1))*P).weil_pairing((2**(e-1))*Q, 2) == -1
 
     alpha = quat.FullRepresentInteger(N*(2**e - N), p)
-    alphaP = End.action(alpha, P, zeta2, Fp4)
-    alphaQ = End.action(alpha, Q, zeta2, Fp4)
+    vP = End.action_by_matrices(alpha, [1, 0], action_matrices)
+    alphaP = vP[0]*P + vP[1]*Q
+    vQ = End.action_by_matrices(alpha, [0, 1], action_matrices)
+    alphaQ = vQ[0]*P + vQ[1]*Q
  
     assert P.weil_pairing(Q, 2**e)**(N*(2**e - N)) == alphaP.weil_pairing(alphaQ, 2**e)
     X, Y = d2isogeny.D2IsogenyImage(E0, E0, (2**e - N)*P, (2**e - N)*Q, alphaP, alphaQ, e, P, Q)
@@ -52,25 +53,23 @@ def setup(lam):
     sys_param["k"] = k
     sys_param["D1"] = D1
     sys_param["D2"] = D2
-    sys_param["Fp4"] = Fp4
     sys_param["zeta2"] = i
     sys_param["2t_basis"] = basis2
+    sys_param["action_matrices"] = End.action_matrices(basis2, 2**a, i, Fp4)
 
     return sys_param
 
 def key_gen(sys_param):
-    Fp4 = sys_param["Fp4"]
     basis2 = sys_param["2t_basis"]
     a = sys_param["a"]
     D1 = sys_param["D1"]
-    zeta2 = sys_param["zeta2"]
+    action_matrices = sys_param["action_matrices"]
 
     # secret key
     sec_key = 2*randint(0, 2**(a-1)) + 1
 
     # public key
-    P, Q = basis2
-    Pd, Qd = NonSmoothRandomIsog(zeta2, Fp4, a, D1, P, Q)
+    Pd, Qd = NonSmoothRandomIsog(a, D1, basis2, action_matrices)
 
     # transform to a Montgomery curve
     EA, PQ = ec.WeierstrassToMontgomery(Pd.curve(), 2**(a-2)*Pd, [Pd, Qd])
@@ -82,20 +81,18 @@ def key_gen(sys_param):
     return sec_key, pub_key
 
 def encrypt(message, sys_param, pub_key):
-    Fp4 = sys_param["Fp4"]
     basis2 = sys_param["2t_basis"]
     a = sys_param["a"]
     b = sys_param["b"]
     D2 = sys_param["D2"]
-    zeta2 = sys_param["zeta2"]
     E1, images = pub_key
+    action_matrices = sys_param["action_matrices"]
 
     beta = 2*message + 1
     beta_inv = ZZ(beta).inverse_mod(2**a)
 
     # isogeny from E0 of degree D2
-    P, Q = basis2
-    P1, Q1 = NonSmoothRandomIsog(zeta2, Fp4, a, D2, P, Q)
+    P1, Q1 = NonSmoothRandomIsog(a, D2, basis2, action_matrices)
 
     # isogeny from E1 of degree 3^b
     zeta3 = (-1 + E1.base_ring()(-3).sqrt())/2
