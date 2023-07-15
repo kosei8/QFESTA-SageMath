@@ -4,11 +4,14 @@ from sage.all import (
     PolynomialRing,
     discrete_log,
     ZZ,
-    factor
+    factor,
+    matrix,
+    identity_matrix,
+    vector
 )
 
-import quaternion
 import elliptic_curve as ec
+import utilities
 
 # action of square root of -1
 def i_action(P, zeta2):
@@ -78,29 +81,42 @@ def action(alpha, P, zeta2, F2):
     ret += d*one_ij_2_action(P, zeta2, F2)
     return ret
 
+# matrix of the multiplication by alpha w.r.t. basis of N-torsion subgroup
+def action_matrix(alpha, basis, N, zeta2, F2):
+    P, Q = basis
+    aP, aQ = [action(alpha, R, zeta2, F2) for R in [P, Q]]
+    a, c = utilities.BiDLP(aP, P, Q, N)
+    b, d = utilities.BiDLP(aQ, P, Q, N)
+    assert aP == a*P + c*Q
+    return matrix([[a, b], [c, d]])
+
+# matrices of the multiplications by i, (i + j)/2, (1 + ij)/2
+def action_matrices(basis, N, zeta2, F2):
+    one = [1,0,0,0]
+    Ms = []
+    for alpha in [one[-i:]+one[:-i] for i in range(1, 4)]:
+        Ms.append(action_matrix(alpha, basis, N, zeta2, F2))
+    return Ms
+
+# the action of a + bi + c(i + j)/2 + d(1 + ij)/2 w.r.t. vector representation by fixed basis
+def action_by_matrices(alpha, v, action_matrices):
+    Ms = [identity_matrix(2)] + action_matrices
+    M = sum(alpha[i]*Ms[i] for i in range(4))
+    return M * vector(v)
+
 # return a generator of E[alpha, ord], where E: y^2 = x^3 + x, P, Q is a basis of E[ord].
-def kernel(alpha, basis, ord, zeta2, Fp4):
+def kernel(alpha, basis, ord, action_matrices):
     assert ZZ(ord).is_prime_power()
     l, e = factor(ord)[0]
     P, Q = basis
-    E = P.curve()
-    assert Q.curve() == E
-    F = E.base_ring()
-    p = F.characteristic()
-    N = quaternion.norm(alpha, p)
-    assert E == EllipticCurve(F, [1,0]) # P should be on the curve y^2 = x^3 + x
-    assert N % ord == 0
-    assert (ord*P).is_zero()
-    assert (ord*Q).is_zero()
 
-    R1 = action(alpha, P, zeta2, Fp4)
-    R2 = action(alpha, Q, zeta2, Fp4)
+    R1 = action(alpha, [1, 0], action_matrices)
+    R2 = action(alpha, [0, 1], action_matrices)
+
     if ec.order(R1, l, e) > ec.order(R2, l, e):
         a = discrete_log(R2, R1, ord, operation='+')
-        assert action(alpha, a*P - Q, zeta2, Fp4).is_zero()
         return a*P - Q
     else:
         a = discrete_log(R1, R2, ord, operation='+')
-        assert action(alpha, P - a*Q, zeta2, Fp4).is_zero()
         return P - a*Q
 
