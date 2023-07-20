@@ -14,22 +14,21 @@ if __name__ == "__main__":
         lam = 20
 
     t = time.time()
-    sys_param = newFESTA2.setup(lam)
+    KEM = newFESTA2.QFESTA_ROM(lam)
     print("Set system parameter: lam=%d, a=%d, b=%d, k=%d, f=%d. %.2fsec."
-          % (lam, sys_param["a"], sys_param["b"], sys_param["k"], sys_param["f"], time.time() - t))
+          % (lam, KEM.PKE.a, KEM.PKE.b, KEM.PKE.k, KEM.PKE.f, time.time() - t))
 
     t = time.time()
-    sec_key, pub_key = newFESTA2.key_gen(sys_param)
+    sec_key, pub_key = KEM.Gen()
     print("Keys are generated. Pubkey %d bytes. %.2fsec." % (len(pub_key), time.time() - t))
 
     t = time.time()
-    message = randint(0, 2^(sys_param["a"]-2))
-    ciphertext = newFESTA2.encrypt(message, sys_param, pub_key)
+    K, ciphertext = KEM.Encaps(pub_key)
     print("Encrypt a message. Ciphertext %d bytes. %.2fsec." % (len(ciphertext), time.time() - t))
 
     t = time.time()
-    m = newFESTA2.decrypt(ciphertext, sys_param, sec_key, pub_key)
-    if message == m:
+    Kd = KEM.Decaps(ciphertext, sec_key, pub_key)
+    if K == Kd:
         print("Success decryption. %.2fsec" % (time.time() - t))
     else:
         print("Failed!!!")
