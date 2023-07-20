@@ -142,23 +142,6 @@ def encrypt(message, sys_param, pub_key):
         sys_param["p_byte_len"], sys_param["l_power_byte_len"]
     ) for Ei, Pi, Qi in [[E1, P1, Q1], [E2, P2, Q2]]]
 
-    ciphertext = ciphertexts[0] + ciphertexts[1]
-    l = sys_param["pk_bytes"]
-    E1d, P1d, Q1d = compression.decompress_curve_and_two_torsion_basis(
-        sys_param["Fp2"], ciphertext[:l], (P, Q, D2), a, sys_param["elligator"], sys_param["cofactor"], [],
-        sys_param["p_byte_len"], sys_param["l_power_byte_len"]
-    )
-    E2d, P2d, Q2d = compression.decompress_curve_and_two_torsion_basis(
-        sys_param["Fp2"], ciphertext[l:], (PA, QA, 3**b), a, sys_param["elligator"], sys_param["cofactor"], [],
-        sys_param["p_byte_len"], sys_param["l_power_byte_len"]
-    )
-    assert E1 == E1d
-    assert P1 == P1d
-    assert Q1 == Q1d
-    assert E2 == E2d
-    assert P2 == P2d
-    assert Q2 == Q2d
-
     return ciphertexts[0] + ciphertexts[1] 
 
 def decrypt(ciphertext, sys_param, sec_key, pub_key):
