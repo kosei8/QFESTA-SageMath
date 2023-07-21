@@ -14,21 +14,38 @@ if __name__ == "__main__":
         lam = 20
 
     t = time.time()
-    KEM = newFESTA2.QFESTA_ROM(lam)
+    KEM = newFESTA2.QFESTA_KEM(lam)
     print("Set system parameter: lam=%d, a=%d, b=%d, k=%d, f=%d. %.2fsec."
           % (lam, KEM.a, KEM.b, KEM.k, KEM.f, time.time() - t))
 
+    print("ROM version")
     t = time.time()
     sec_key, pub_key = KEM.Gen()
     print("Keys are generated. Pubkey %d bytes. %.2fsec." % (len(pub_key), time.time() - t))
 
     t = time.time()
     K, ciphertext = KEM.Encaps(pub_key)
-    print("Encrypt a message. Ciphertext %d bytes. %.2fsec." % (len(ciphertext), time.time() - t))
+    print("Encaps. Ciphertext %d bytes. %.2fsec." % (len(ciphertext), time.time() - t))
 
     t = time.time()
     Kd = KEM.Decaps(ciphertext, sec_key, pub_key)
     if K == Kd:
-        print("Success decryption. %.2fsec" % (time.time() - t))
+        print("Success Decaps. %.2fsec" % (time.time() - t))
+    else:
+        print("Failed!!!")
+
+    print("\nQROM version")
+    t = time.time()
+    sec_key, pub_key = KEM.Gen()
+    print("Keys are generated. Pubkey %d bytes. %.2fsec." % (len(pub_key), time.time() - t))
+
+    t = time.time()
+    K, ciphertext, d = KEM.QEncaps(pub_key)
+    print("Encaps. Ciphertext %d bytes. %.2fsec." % (len(ciphertext) + len(d), time.time() - t))
+
+    t = time.time()
+    Kd = KEM.QDecaps(ciphertext, d, sec_key, pub_key)
+    if K == Kd:
+        print("Success Decaps. %.2fsec" % (time.time() - t))
     else:
         print("Failed!!!")

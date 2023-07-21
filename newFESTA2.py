@@ -44,7 +44,7 @@ def NonSmoothRandomIsog(e, N, basis2, action_matrices, strategy):
 
     return Pd, Qd
 
-
+# OW-PCA PKE
 class QFESTA_PKE:
     def __init__(self, lam):
         a, b, f, k, D1, D2 = param.SysParam(lam)
@@ -219,7 +219,8 @@ class QFESTA_PKE:
             m = 2**a - m
         return (m - 1)//2
 
-class QFESTA_ROM(QFESTA_PKE):
+# IND-CCA KEM
+class QFESTA_KEM(QFESTA_PKE):
     def __init__(self, lam):
         super().__init__(lam)
         self.n = (lam + 7) // 8 # byte length of output of Hash function
@@ -228,6 +229,9 @@ class QFESTA_ROM(QFESTA_PKE):
     def H(self, m):
         shake = SHAKE256.new(m)
         return shake.read(self.n)
+
+    def Hd(self, m):
+        return self.H(b"dash" + m)
 
     def RandomMessage(self):
         return randint(0, 2**(self.a - 2))
@@ -252,4 +256,21 @@ class QFESTA_ROM(QFESTA_PKE):
             return self.H(s + ciphertext)
         else:
             mb = utilities.integer_to_bytes(m, self.m_byte_len)
+            return self.H(mb + ciphertext)
+
+    def QEncaps(self, pub_key):
+        m = self.RandomMessage()
+        c = self.Enc(m, pub_key)
+        mb = utilities.integer_to_bytes(m, self.m_byte_len)
+        d = self.Hd(mb)
+        K = self.H(mb + c)
+        return K, c, d
+
+    def QDecaps(self, ciphertext, d, sec_key, pub_key):
+        sk, s = sec_key
+        m = self.Dec(ciphertext, sk, pub_key)
+        mb = utilities.integer_to_bytes(m, self.m_byte_len)
+        if m == None or not self.Hd(mb) == d:
+            return self.H(s + ciphertext)
+        else:
             return self.H(mb + ciphertext)
