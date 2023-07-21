@@ -16,7 +16,7 @@ if __name__ == "__main__":
     t = time.time()
     KEM = newFESTA2.QFESTA_ROM(lam)
     print("Set system parameter: lam=%d, a=%d, b=%d, k=%d, f=%d. %.2fsec."
-          % (lam, KEM.PKE.a, KEM.PKE.b, KEM.PKE.k, KEM.PKE.f, time.time() - t))
+          % (lam, KEM.a, KEM.b, KEM.k, KEM.f, time.time() - t))
 
     t = time.time()
     sec_key, pub_key = KEM.Gen()
