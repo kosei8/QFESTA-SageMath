@@ -9,11 +9,8 @@ import elliptic_curve as ec
 import richelot_isogenies as richelot
 import utilities
 
-# the images of (R1, O) and (S1, O) under a (2^e, 2^e)-isogeny from E1 time E2 with kernel <(P1, P2), (Q1, Q2)>
-def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R1, S1):
-    O = E2([0, 1, 0])
-    R = (R1, O)
-    S = (S1, O)
+# the images of R and S under a (2^e, 2^e)-isogeny from E1 time E2 with kernel <(P1, P2), (Q1, Q2)>
+def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R, S):
     if E1.j_invariant() == E2.j_invariant() == 1728:
         # product of elliptic curves with j-invariant 1728
         cnt = 0

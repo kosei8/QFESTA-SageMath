@@ -15,6 +15,7 @@ import parameter_generate as param
 import d2isogeny
 import supersingular
 import compression
+import richelot_isogenies as richelot
 import utilities
 
 # the image of P, Q under a random isogeny of degree N
@@ -35,7 +36,7 @@ def NonSmoothRandomIsog(e, N, basis2, action_matrices):
     alphaQ = vQ[0]*P + vQ[1]*Q
  
     assert P.weil_pairing(Q, 2**e)**(N*(2**e - N)) == alphaP.weil_pairing(alphaQ, 2**e)
-    X, Y = d2isogeny.D2IsogenyImage(E0, E0, (2**e - N)*P, (2**e - N)*Q, alphaP, alphaQ, e, P, Q)
+    X, Y = d2isogeny.D2IsogenyImage(E0, E0, (2**e - N)*P, (2**e - N)*Q, alphaP, alphaQ, e, (P, E0(0)), (Q, E0(0)))
     Pd, Qd = X[0], Y[0]
     if not Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N:
         Pd, Qd = X[1], Y[1]
@@ -172,24 +173,45 @@ class QFESTA_PKE:
             self.p_byte_len, self.l_power_byte_len
         )
 
-        PA = D2*ZZ(sec_key).inverse_mod(2**a)*PA
-        QA = D2*sec_key*QA
+        # degree check
+        if not P2.weil_pairing(Q2, 2**a) == PA.weil_pairing(QA, 2**a)**(3**b):
+            return None
+
         P1d = 3**b*k*P1
         Q1d = 3**b*k*Q1
         P2d = D2*ZZ(sec_key).inverse_mod(2**a)*P2
         Q2d = D2*sec_key*Q2
 
         assert P1d.weil_pairing(Q1d, 2**a)*P2d.weil_pairing(Q2d, 2**a) == 1
-        X, Y = d2isogeny.D2IsogenyImage(E1, E2, P1d, Q1d, P2d, Q2d, a, P1, Q1)
+        X, Y = d2isogeny.D2IsogenyImage(E1, E2, P1d, Q1d, P2d, Q2d, a, (E1(0), P2), (E1(0), Q2))
         R, S = X[0], Y[0]
         if not R.curve().is_isomorphic(EA):
             R, S = X[1], Y[1]
-        assert R.curve().is_isomorphic(EA)
+
+        # codomain check
+        if not R.curve().is_isomorphic(EA):
+            return None
+
         iota = R.curve().isomorphism_to(EA)
         R, S = iota(R), iota(S)
-        m = ZZ(discrete_log(R, PA, 2**a, operation='+'))
-        md = ZZ(discrete_log(S, QA, 2**a, operation='+'))
-        assert (m*md) % 2**a == 1
+        m = (ZZ(discrete_log(R, PA, 2**a, operation='+')) * ZZ(3**b*k).inverse_mod(2**a)) % 2**a
+
+        # matrix check
+        if not m*S == (3**b*k)*QA:
+            return None
+
+        # check that message is constructed by an isogeny from E_0 to E_1
+        e = a//2 + 1
+        PAd, QAd = 2**(a-e)*PA, 2**(a-e)*QA
+        P1d, Q1d = 2**(a-e)*P1, 2**(a-e)*Q1
+        PAd, QAd = ZZ(sec_key).inverse_mod(2**e)*PAd, sec_key*QAd
+        P1d, Q1d = ZZ(m).inverse_mod(2**e)*P1d, m*Q1d
+        assert P1d.weil_pairing(Q1d, 2**e)*PAd.weil_pairing(QAd, 2**e) == 1
+        strategy = utilities.optimised_strategy(e - 1)
+        _, codomain = richelot.split_richelot_chain(P1d, Q1d, PAd, QAd, e, strategy)
+        if not (codomain[0].is_isomorphic(P.curve()) or codomain[1].is_isomorphic(P.curve())):
+            return None
+
         if m >= 2**(a-1):
             m = 2**a - m
         return (m - 1)//2
@@ -210,6 +232,7 @@ class QFESTA_ROM:
     def Gen(self):
         sk, pk = self.PKE.Gen()
         s = self.RandomMessage()
+        s = utilities.integer_to_bytes(s)
         return (sk, s), pk
 
     def Encaps(self, pub_key):
