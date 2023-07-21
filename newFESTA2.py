@@ -19,7 +19,7 @@ import richelot_isogenies as richelot
 import utilities
 
 # the image of P, Q under a random isogeny of degree N
-def NonSmoothRandomIsog(e, N, basis2, action_matrices):
+def NonSmoothRandomIsog(e, N, basis2, action_matrices, strategy):
     P, Q = basis2
     E0 = P.curve()
     p = E0.base_ring().characteristic()
@@ -36,7 +36,7 @@ def NonSmoothRandomIsog(e, N, basis2, action_matrices):
     alphaQ = vQ[0]*P + vQ[1]*Q
  
     assert P.weil_pairing(Q, 2**e)**(N*(2**e - N)) == alphaP.weil_pairing(alphaQ, 2**e)
-    X, Y = d2isogeny.D2IsogenyImage(E0, E0, (2**e - N)*P, (2**e - N)*Q, alphaP, alphaQ, e, (P, E0(0)), (Q, E0(0)))
+    X, Y = d2isogeny.D2IsogenyImage(E0, E0, (2**e - N)*P, (2**e - N)*Q, alphaP, alphaQ, e, (P, E0(0)), (Q, E0(0)), strategy)
     Pd, Qd = X[0], Y[0]
     if not Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N:
         Pd, Qd = X[1], Y[1]
@@ -72,13 +72,17 @@ class QFESTA_PKE:
         self.basis_t2 = basis2
         self.Fp2 = Fp2d
 
+        # pre-computed optimized strategies for richelot chain
+        self.strategy = dict()
+        for e in [a - 1, a - 2, a - 3, a - 4, a//2]:
+            self.strategy[e] = utilities.optimised_strategy(e)
+
         # for compression
         self.cofactor = ZZ((p + 1) / 2**a)
         self.p_byte_len = (p.nbits() + 7)//8
         self.l_power_byte_len = (a + 7)//8
         self.pk_bytes = 2*self.p_byte_len + 3*self.l_power_byte_len
         self.elligator = supersingular.precompute_elligator_tables(Fp2d)
-
 
     def Gen(self):
         basis2 = self.basis_t2
@@ -90,7 +94,7 @@ class QFESTA_PKE:
         sec_key = 2*randint(0, 2**(a-1)) + 1
 
         # public key
-        Pd, Qd = NonSmoothRandomIsog(a, D1, basis2, action_matrices)
+        Pd, Qd = NonSmoothRandomIsog(a, D1, basis2, action_matrices, self.strategy)
 
         # transform to a Montgomery curve
         EA, PQ = ec.WeierstrassToMontgomery(Pd.curve(), 2**(a-2)*Pd, [Pd, Qd])
@@ -125,7 +129,7 @@ class QFESTA_PKE:
         beta_inv = ZZ(beta).inverse_mod(2**a)
 
         # isogeny from E0 of degree D2
-        P1, Q1 = NonSmoothRandomIsog(a, D2, basis2, action_matrices)
+        P1, Q1 = NonSmoothRandomIsog(a, D2, basis2, action_matrices, self.strategy)
 
         # isogeny from E1 of degree 3^b
         zeta3 = (-1 + EA.base_ring()(-3).sqrt())/2
@@ -183,7 +187,7 @@ class QFESTA_PKE:
         Q2d = D2*sec_key*Q2
 
         assert P1d.weil_pairing(Q1d, 2**a)*P2d.weil_pairing(Q2d, 2**a) == 1
-        X, Y = d2isogeny.D2IsogenyImage(E1, E2, P1d, Q1d, P2d, Q2d, a, (E1(0), P2), (E1(0), Q2))
+        X, Y = d2isogeny.D2IsogenyImage(E1, E2, P1d, Q1d, P2d, Q2d, a, (E1(0), P2), (E1(0), Q2), self.strategy)
         R, S = X[0], Y[0]
         if not R.curve().is_isomorphic(EA):
             R, S = X[1], Y[1]
@@ -207,8 +211,7 @@ class QFESTA_PKE:
         PAd, QAd = ZZ(sec_key).inverse_mod(2**e)*PAd, sec_key*QAd
         P1d, Q1d = ZZ(m).inverse_mod(2**e)*P1d, m*Q1d
         assert P1d.weil_pairing(Q1d, 2**e)*PAd.weil_pairing(QAd, 2**e) == 1
-        strategy = utilities.optimised_strategy(e - 1)
-        _, codomain = richelot.split_richelot_chain(P1d, Q1d, PAd, QAd, e, strategy)
+        _, codomain = richelot.split_richelot_chain(P1d, Q1d, PAd, QAd, e, self.strategy[e - 1])
         if not (codomain[0].is_isomorphic(P.curve()) or codomain[1].is_isomorphic(P.curve())):
             return None
 

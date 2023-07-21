@@ -10,7 +10,7 @@ import richelot_isogenies as richelot
 import utilities
 
 # the images of R and S under a (2^e, 2^e)-isogeny from E1 time E2 with kernel <(P1, P2), (Q1, Q2)>
-def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R, S):
+def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R, S, strategy):
     if E1.j_invariant() == E2.j_invariant() == 1728:
         # product of elliptic curves with j-invariant 1728
         cnt = 0
@@ -40,14 +40,20 @@ def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R, S):
         E1, PQ1RS = ec.WeierstrassToMontgomery(P1.curve(), (2**(e-2)*P1), [P1, Q1, R[0], S[0]])
         E2, PQ2RS = ec.WeierstrassToMontgomery(P2.curve(), (2**(e-2)*P2), [P2, Q2, R[1], S[1]])
         R, S = [(PQ1RS[i], PQ2RS[i]) for i in range(2,4)]
-        strategy = utilities.optimised_strategy(e - 1)
-        chain = richelot.compute_richelot_chain(PQ1RS[:2] + PQ2RS[:2], e, strategy)
+        if e - 1 in strategy:
+            st = strategy[e-1]
+        else:
+            st = utilities.optimised_strategy(e-1)
+        chain = richelot.compute_richelot_chain(PQ1RS[:2] + PQ2RS[:2], e, st)
         for phi in chain:
             R, S = phi(R), phi(S)
         return R, S
     else:
-        strategy = utilities.optimised_strategy(e - 1)
-        chain = richelot.compute_richelot_chain([P1, Q1, P2, Q2], e, strategy)
+        if e - 1 in strategy:
+            st = strategy[e-1]
+        else:
+            st = utilities.optimised_strategy(e-1)
+        chain = richelot.compute_richelot_chain([P1, Q1, P2, Q2], e, st)
         for phi in chain:
             R, S = phi(R), phi(S)
         return R, S
