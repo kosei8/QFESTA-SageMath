@@ -223,7 +223,7 @@ class QFESTA_ROM:
         sk, s = sec_key
         m = self.PKE.Dec(ciphertext, sk, pub_key)
         if m == None:
-            return self.H(self.s, ciphertext)
+            return self.H(s, ciphertext)
         else:
             mb = utilities.integer_to_bytes(m, self.m_byte_len)
             return self.H(mb, ciphertext)
