@@ -225,8 +225,8 @@ class QFESTA_ROM(QFESTA_PKE):
         self.n = (lam + 7) // 8 # byte length of output of Hash function
         self.m_byte_len = ((self.a - 2) + 7) // 8
 
-    def H(self, m, c):
-        shake = SHAKE256.new(m + c)
+    def H(self, m):
+        shake = SHAKE256.new(m)
         return shake.read(self.n)
 
     def RandomMessage(self):
@@ -242,15 +242,14 @@ class QFESTA_ROM(QFESTA_PKE):
         m = self.RandomMessage()
         c = self.Enc(m, pub_key)
         mb = utilities.integer_to_bytes(m, self.m_byte_len)
-        K = self.H(mb, c)
+        K = self.H(mb + c)
         return K, c
     
     def Decaps(self, ciphertext, sec_key, pub_key):
         sk, s = sec_key
         m = self.Dec(ciphertext, sk, pub_key)
         if m == None:
-            return self.H(s, ciphertext)
+            return self.H(s + ciphertext)
         else:
             mb = utilities.integer_to_bytes(m, self.m_byte_len)
-            return self.H(mb, ciphertext)
-
+            return self.H(mb + ciphertext)
