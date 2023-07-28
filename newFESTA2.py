@@ -97,7 +97,7 @@ class QFESTA_PKE:
         Pd, Qd = NonSmoothRandomIsog(a, D1, basis2, action_matrices, self.strategy)
 
         # transform to a Montgomery curve
-        EA, PQ = ec.WeierstrassToMontgomery(Pd.curve(), 2**(a-2)*Pd, [Pd, Qd])
+        EA, PQ = ec.WeierstrassToMontgomery(Pd.curve(), (2**(a-2)*Pd).xy()[0], [Pd, Qd])
         Pd, Qd = PQ
         Pd = sec_key*Pd
         Qd = ZZ(sec_key).inverse_mod(2**a)*Qd
@@ -133,15 +133,22 @@ class QFESTA_PKE:
 
         # isogeny from E1 of degree 3^b
         zeta3 = (-1 + EA.base_ring()(-3).sqrt())/2
-        _, P2, Q2 = ec.chain_3radials(EA, PA, QA, zeta3, b)
+        PQA = PA + QA
+        E2, xs = ec.chain_3radials(EA, [PA.xy()[0], QA.xy()[0], PQA.xy()[0]], zeta3, b)
 
         # transform to Montgomery curves.
         # For ProdToJac, 2^(a-1)P1, 2^(a-1)P2 should be (0 0) in the Montgomery curves.
-        E1, PQ = ec.WeierstrassToMontgomery(P1.curve(), 2**(a-2)*P1, [P1, Q1])
+        E1, PQ = ec.WeierstrassToMontgomery(P1.curve(), (2**(a-2)*P1).xy()[0], [P1, Q1])
         P1, Q1 = PQ
         P1, Q1 = beta*P1, beta_inv*Q1
-        E2, PQ = ec.WeierstrassToMontgomery(P2.curve(), 2**(a-2)*P2, [P2, Q2])
-        P2, Q2 = PQ
+        x4 = xs[0]
+        for _ in range(a-2):
+            x4 = ec.x_onlyDoubling(E2, x4)
+        E2, xs = ec.WeierstrassToMontgomery(E2, x4, xs, x_only=True)
+        P2 = E2.lift_x(xs[0])
+        Q2 = E2.lift_x(xs[1])
+        if not (P2 + Q2).xy()[0] == xs[2]:
+            Q2 = -Q2
         P2, Q2 = beta*P2, beta_inv*Q2
 
         # compression

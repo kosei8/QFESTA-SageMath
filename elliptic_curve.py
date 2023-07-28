@@ -36,7 +36,7 @@ def order(P, l, e):
     return l**e
 
 # a curve of form y^2 + a1xy + a3y = x^3 isomorphic to E. The image of an order-3 point P is (0, 0).
-def curve_for_3radical(E, P, Qs):
+def curve_for_3radical(E, P, xs):
     F = E.base_ring()
     R = PolynomialRing(F, 2, names=["x", "y"])
     x, y = R.gens()
@@ -48,12 +48,12 @@ def curve_for_3radical(E, P, Qs):
     Ed = EllipticCurve(F, [a1, 0, a3, 0, 0])
     assert E.is_isomorphic(Ed)
 
-    Qds = []
-    for Q in Qs:
-        Qds.append(Ed([Q[0] - P[0], Q[1] + a*(Q[0] - P[0]) - P[1]]))
-    return Ed, Qds
+    xds = []
+    for x in xs:
+        xds.append(x - P[0])
+    return Ed, xds
 
-# random 3-isogney by a radical isogeny
+# random 3-isogeny by a radical isogeny
 def radical_deg3(a1, a3, xs, zeta3):
     p = a1.base_ring().characteristic()
     N = (p**2 - 1)//3
@@ -73,25 +73,19 @@ def radical_deg3(a1, a3, xs, zeta3):
 
     return a1d, a3d, retXs
 
-# chain of 3-isogenies
-def chain_3radials(E, P, Q, zeta3, n):
-    if n <= 0:
-        return E, P, Q
+# chain of 3-isogenies of length n, return codomain and the image of a set xs of x-coordinates
+def chain_3radials(E, xs, zeta3, n):
+    assert n >= 0
+    if n == 0:
+        return E, xs
     F = E.base_ring()
     K = point_ord(E, 3, 1)
-    E, points = curve_for_3radical(E, K, [P, Q])
-    P, Q = points
+    E, xs = curve_for_3radical(E, K, xs)
     a1, a3 = E.a1(), E.a3()
-    xs = [P[0], Q[0], (P + Q)[0]]
     for _ in range(n):
         a1, a3, xs = radical_deg3(a1, a3, xs, zeta3)
     E = EllipticCurve(F, [a1, 0, a3, 0, 0])
-    P = E.lift_x(xs[0])
-    Q = E.lift_x(xs[1])
-    if not (P + Q)[0] == xs[2]:
-        Q = -Q
-    assert (P + Q)[0] == xs[2]
-    return E, P, Q
+    return E, xs
 
 # a curve of form y^2 + (1-b)xy - by = x^3 - bx^2 isomorphic to E. The image of an order-5 point P is (0, 0).
 def curve_for_5radical(E, P, Qs):
@@ -153,21 +147,33 @@ def chain_5radials(E, P, Q, zeta5, n):
     assert (P + Q)[0] == xs[2]
     return E, P, Q
 
-# return the Montgomery curve isomorphic to E s.t. the image of an order-4 point T4 is (1, *)
-def WeierstrassToMontgomery(E, T4, Ps=[]):
-    assert (4*T4).is_zero() and not (2*T4).is_zero()
-    x4, _ = T4.xy()
-    x2, _ = (2*T4).xy()
+# the x-coordinate of [2](x0, -)
+def x_onlyDoubling(E, x0):
+    b2 = E.a1()**2 + 4*E.a2()
+    b4 = 2*E.a4() + E.a1()*E.a3()
+    b6 = E.a3()**2 + 4*E.a6()
+    b8 = b2 * E.a6() - E.a1()*E.a3()*E.a4() + E.a2()*E.a3()**2 - E.a4()**2
+    return (x0**4 - b4*x0**2 - 2*b6*x0 - b8) / (4*x0**3 + b2*x0**2 + 2*b4*x0 + b6)
+
+# return the Montgomery curve isomorphic to E s.t. the image of an order-4 point (x4, -) is (1, *)
+def WeierstrassToMontgomery(E, x4, Ps=[], x_only=False):
+    x2 = x_onlyDoubling(E, x4)
     u = 1/(x4 - x2)
-    v = u.sqrt()**3   # if E[4] defined over the base field sqrt of u is in the base field.
+    if not x_only:
+        v = u.sqrt()**3   # if E[4] defined over the base field sqrt of u is in the base field.
     A = (E.a2() + (E.a1()/2)**2 + 3*x2) * u
     Mont = EllipticCurve(E.base_ring(), [0, A, 0, 1, 0])
     assert E.j_invariant() == Mont.j_invariant()
+
     imPs = []
-    for P in Ps:
-        if P.is_zero():
-            imPs.append(Mont([0,1,0]))
-        else:
-            x, y = P.xy()
-            imPs.append(Mont([(x - x2) * u, (y + E.a1()/2 * x + E.a3()/2) * v]))
+    if x_only:
+        for x in Ps:
+            imPs.append((x - x2) * u)
+    else:
+        for P in Ps:
+            if P.is_zero():
+                imPs.append(Mont([0,1,0]))
+            else:
+                x, y = P.xy()
+                imPs.append(Mont([(x - x2) * u, (y + E.a1()/2 * x + E.a3()/2) * v]))
     return Mont, imPs

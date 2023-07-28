@@ -37,8 +37,8 @@ def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R, S, strategy):
 
         # Here, we can apply ProdToJac
         # transform to Montgomery curves. ProdToJac requires ((0,0), (0,0)) in the kernel.
-        E1, PQ1RS = ec.WeierstrassToMontgomery(P1.curve(), (2**(e-2)*P1), [P1, Q1, R[0], S[0]])
-        E2, PQ2RS = ec.WeierstrassToMontgomery(P2.curve(), (2**(e-2)*P2), [P2, Q2, R[1], S[1]])
+        E1, PQ1RS = ec.WeierstrassToMontgomery(P1.curve(), (2**(e-2)*P1).xy()[0], [P1, Q1, R[0], S[0]])
+        E2, PQ2RS = ec.WeierstrassToMontgomery(P2.curve(), (2**(e-2)*P2).xy()[0], [P2, Q2, R[1], S[1]])
         R, S = [(PQ1RS[i], PQ2RS[i]) for i in range(2,4)]
         if e - 1 in strategy:
             st = strategy[e-1]
