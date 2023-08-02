@@ -1,10 +1,10 @@
 import importlib, sys, time
 import parameter_generate as param
 import elliptic_curve as ec
-import newFESTA2
+import QFESTA
 importlib.reload(ec)
 importlib.reload(param)
-importlib.reload(newFESTA2)
+importlib.reload(QFESTA)
 
 if __name__ == "__main__":
     args = sys.argv
@@ -14,7 +14,7 @@ if __name__ == "__main__":
         lam = 20
 
     t = time.time()
-    KEM = newFESTA2.QFESTA_KEM(lam)
+    KEM = QFESTA.QFESTA_KEM(lam)
     print("Set system parameter: lam=%d, a=%d, b=%d, k=%d, f=%d. %.2fsec."
           % (lam, KEM.a, KEM.b, KEM.k, KEM.f, time.time() - t))
 
