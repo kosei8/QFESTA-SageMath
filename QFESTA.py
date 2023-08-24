@@ -230,8 +230,8 @@ class QFESTA_PKE:
 class QFESTA_KEM(QFESTA_PKE):
     def __init__(self, lam):
         super().__init__(lam)
-        self.n = (lam + 7) // 8 # byte length of output of Hash function
         self.m_byte_len = ((self.a - 2) + 7) // 8
+        self.n = self.m_byte_len    # byte length of output of Hash function = message length
 
     def H(self, m):
         shake = SHAKE256.new(m)
