@@ -66,7 +66,7 @@ def cornacchia_smith(q):
 def FullRepresentInteger(N, p):
     upper_bound = floor(4*N/p)
     assert upper_bound > 0 # N > p
-    for _ in range(1000): # if fail 1000 times then return None.
+    while True:
         z = randint(0, floor(sqrt(upper_bound)))
         t = randint(0, floor(sqrt(upper_bound - z**2)))
         M = 4*N - p*(z**2 + t**2)

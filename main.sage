@@ -2,6 +2,7 @@ import importlib, sys, time
 import parameter_generate as param
 import elliptic_curve as ec
 import QFESTA
+import utilities
 importlib.reload(ec)
 importlib.reload(param)
 importlib.reload(QFESTA)
@@ -12,6 +13,8 @@ if __name__ == "__main__":
         lam = int(args[1])
     else:
         lam = 20
+
+    utilities.speed_up_sagemath()
 
     t = time.time()
     KEM = QFESTA.QFESTA_KEM(lam)
