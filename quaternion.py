@@ -18,7 +18,7 @@ def SumOf2Sq(n):
     if n == 1:
         return 1, 0
     a, b = 1, 0
-    for q in Primes()[:1000]:
+    for q in Primes()[:100]:
         e = 0
         while n % q == 0:
             n //= q
@@ -45,13 +45,22 @@ def SumOf2Sq(n):
 # Return a, b such that a^2 + b^2 = q, where q is a prime.
 def cornacchia_smith(q):
     if q == 2:
-        return [1, 1]
-    x = Mod(-1, q).sqrt()
-    a, b, c = q, ZZ(x), floor(q**(0.5))
-    while b > c:
-        a, b = b, a % b
-    t = q - b**2
-    return b, sqrt(t)
+        a, b = 1, 1
+    else:
+        x = Mod(-1, q).sqrt()
+        a, b, c = q, ZZ(x), floor(q**(0.5))
+        while b > c:
+            a, b = b, a % b
+        t = q - b**2
+        a, b = b, sqrt(t)
+
+    # randomize output
+    r = randint(0, 1)
+    if r == 0:
+        a, b = b, a
+    r1 = randint(0, 1)
+    r2 = randint(0, 1)
+    return (-1)**r1*a, (-1)**r2*b
 
 # return a, b, c, d s.t. the norm of a + bi + c(i+j)/2 + d(1 + ij)/2 is N.
 def FullRepresentInteger(N, p):
