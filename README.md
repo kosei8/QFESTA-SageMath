@@ -6,7 +6,7 @@ proposed in [QFESTA: Efficient Algorithms and Parameters for FESTA using Quatern
 using [SageMath](https://www.sagemath.org).
 
 Our code is partially based on 
-[FESTA-SageMath](https://github.com/FESTA-PKE/FESTA-SageMath/tree/main) [^1]
+[FESTA-SageMath](https://github.com/FESTA-PKE/FESTA-SageMath/tree/main) [^1].
 In particular, we use the FESTA-SageMath code for
 the computation of isogenies between principally polarized abelian surfaces
 and the key compression.
