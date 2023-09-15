@@ -8,6 +8,7 @@ using [SageMath](https://www.sagemath.org).
 Our code is partially based on 
 [FESTA-SageMath](https://github.com/FESTA-PKE/FESTA-SageMath/tree/main) [^1]
 [^1]: committed on Jun 2, 2023; *commit id*: 7bc6c47eb3b87fd483be07fbbb4666174132d1a9.
+
 In particular, we use the FESTA-SageMath code for
 the computation of isogenies between principally polarized abelian surfaces
 and the key compression.
