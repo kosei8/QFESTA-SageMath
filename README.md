@@ -2,7 +2,7 @@
 
 A proof-of-concept implementation of the isogeny-based KEM
 QFESTA (Quaternion Fast Encapsulation from Supersingular Torsion Attacks)
-proposed in [QFESTA: Efficient Algorithms and Parameters for FESTA using Quaternion Algebas](https://eprint.iacr.org/2023/***.pdf)
+proposed in [QFESTA: Efficient Algorithms and Parameters for FESTA using Quaternion Algebas](https://eprint.iacr.org/2023/1468)
 using [SageMath](https://www.sagemath.org).
 
 Our code is partially based on 
@@ -46,7 +46,7 @@ Encaps. Ciphertext 382 bytes. 1.87sec.
 Success Decaps. 2.67sec
 ```
 
-Bench mark test for security bits 128, 192, and 256 is executed by
+Benchmark test for security bits 128, 192, and 256 is executed by
 ```
 sage bench.sage
 ```
