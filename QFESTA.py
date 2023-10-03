@@ -245,39 +245,22 @@ class QFESTA_KEM(QFESTA_PKE):
 
     def Gen(self):
         sk, pk = super().Gen()
-        s = self.RandomMessage()
-        s = utilities.integer_to_bytes(s)
-        return (sk, s), pk
+        return sk, pk
 
     def Encaps(self, pub_key):
         m = self.RandomMessage()
         c = self.Enc(m, pub_key)
         mb = utilities.integer_to_bytes(m, self.m_byte_len)
-        K = self.H(mb + c)
-        return K, c
-    
-    def Decaps(self, ciphertext, sec_key, pub_key):
-        sk, s = sec_key
-        m = self.Dec(ciphertext, sk, pub_key)
-        if m == None:
-            return self.H(s + ciphertext)
-        else:
-            mb = utilities.integer_to_bytes(m, self.m_byte_len)
-            return self.H(mb + ciphertext)
-
-    def QEncaps(self, pub_key):
-        m = self.RandomMessage()
-        c = self.Enc(m, pub_key)
-        mb = utilities.integer_to_bytes(m, self.m_byte_len)
-        d = self.Hd(mb)
-        K = self.H(mb + c)
+        d = self.Hd(mb + c)
+        K = self.H(mb)
         return K, c, d
 
-    def QDecaps(self, ciphertext, d, sec_key, pub_key):
-        sk, s = sec_key
-        m = self.Dec(ciphertext, sk, pub_key)
+    def Decaps(self, c1, c2, sec_key, pub_key):
+        m = self.Dec(c1, sec_key, pub_key)
+        if m == None:
+            return None
         mb = utilities.integer_to_bytes(m, self.m_byte_len)
-        if m == None or not self.Hd(mb) == d:
-            return self.H(s + ciphertext)
+        if not self.Hd(mb + c1) == c2:
+            return None
         else:
-            return self.H(mb + ciphertext)
+            return self.H(mb)

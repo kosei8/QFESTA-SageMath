@@ -23,10 +23,10 @@ if __name__ == "__main__":
             sec_key, pub_key = KEM.Gen()
             t_gen += time.time() - t
             t = time.time()
-            K, ciphertext, d = KEM.QEncaps(pub_key)
+            K, ciphertext, d = KEM.Encaps(pub_key)
             t_enc += time.time() - t
             t = time.time()
-            Kd = KEM.QDecaps(ciphertext, d, sec_key, pub_key)
+            Kd = KEM.Decaps(ciphertext, d, sec_key, pub_key)
             t_dec += time.time() - t
             assert K == Kd
         print("lam=%d: %.2f, %.2f, %.2f" % (lam, t_gen/N, t_enc/N, t_dec/N))
