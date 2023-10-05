@@ -26,11 +26,11 @@ if __name__ == "__main__":
     print("Keys are generated. Pubkey %d bytes. %.2fsec." % (len(pub_key), time.time() - t))
 
     t = time.time()
-    K, ciphertext, d = KEM.Encaps(pub_key)
-    print("Encaps. Ciphertext %d bytes. %.2fsec." % (len(ciphertext) + len(d), time.time() - t))
+    K, ciphertext = KEM.Encaps(pub_key)
+    print("Encaps. Ciphertext %d bytes. %.2fsec." % (len(ciphertext), time.time() - t))
 
     t = time.time()
-    Kd = KEM.Decaps(ciphertext, d, sec_key, pub_key)
+    Kd = KEM.Decaps(ciphertext, sec_key, pub_key)
     if K == Kd:
         print("Success Decaps. %.2fsec" % (time.time() - t))
     else:

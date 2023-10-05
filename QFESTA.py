@@ -287,7 +287,7 @@ class QFESTA_KEM(QFESTA_PKE):
     def __init__(self, lam):
         super().__init__(lam)
         self.m_byte_len = ((self.a - 2) + 7) // 8
-        self.n = (lam + 7) // 8    # byte length of output of Hash function = the security parameter / 8
+        self.n = self.m_byte_len    # byte length of output of Hash function = message length
 
     def H(self, m):
         shake = SHAKE256.new(m)
@@ -301,22 +301,22 @@ class QFESTA_KEM(QFESTA_PKE):
 
     def Gen(self):
         sk, pk = super().Gen()
-        return sk, pk
+        s = self.RandomMessage()
+        s = utilities.integer_to_bytes(s)
+        return (sk, s), pk
 
     def Encaps(self, pub_key):
         m = self.RandomMessage()
         c = self.Enc(m, pub_key)
         mb = utilities.integer_to_bytes(m, self.m_byte_len)
-        d = self.Hd(mb + c)
-        K = self.H(mb)
-        return K, c, d
-
-    def Decaps(self, c1, c2, sec_key, pub_key):
-        m = self.Dec(c1, sec_key, pub_key)
+        K = self.H(mb + c)
+        return K, c
+    
+    def Decaps(self, ciphertext, sec_key, pub_key):
+        sk, s = sec_key
+        m = self.Dec(ciphertext, sk, pub_key)
         if m == None:
-            return None
-        mb = utilities.integer_to_bytes(m, self.m_byte_len)
-        if not self.Hd(mb + c1) == c2:
-            return None
+            return self.H(s + ciphertext)
         else:
-            return self.H(mb)
+            mb = utilities.integer_to_bytes(m, self.m_byte_len)
+            return self.H(mb + ciphertext)
