@@ -34,16 +34,10 @@ sage main.sage {secruty bits}
 For example,
 ```
 $ sage main.sage 128
-Set system parameter: lam=128, a=272, b=162, k=131, f=169. 1.97sec.
-ROM version
-Keys are generated. Pubkey 174 bytes. 1.68sec.
-Encaps. Ciphertext 348 bytes. 1.92sec.
-Success Decaps. 2.71sec
-
-QROM version
-Keys are generated. Pubkey 174 bytes. 1.68sec.
-Encaps. Ciphertext 382 bytes. 1.87sec.
-Success Decaps. 2.67sec
+Set system parameter: lam=128, a=272, b=162, k=131, f=169. 4.86sec.
+Keys are generated. Pubkey 174 bytes. 1.64sec.
+Encaps. Ciphertext 364 bytes. 1.80sec.
+Success Decaps. 2.66sec
 ```
 
 Benchmark test for security bits 128, 192, and 256 is executed by
