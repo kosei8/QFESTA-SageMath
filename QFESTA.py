@@ -3,8 +3,11 @@ from sage.all import (
     randint,
     ZZ,
     discrete_log,
-    GF
+    GF,
+    matrix,
+    block_matrix
 )
+from sage.modules.free_module_integer import IntegerLattice
 
 from Crypto.Hash import SHAKE256
 
@@ -44,6 +47,53 @@ def NonSmoothRandomIsog(e, N, basis2, action_matrices, strategy):
 
     return Pd, Qd
 
+# For an integer matrix M of size (*, 2), return a shortest vector (a, b) satisfying M(a, b)^T = 0 mod N
+def shortest_solution_mod(M, N):
+    mod_mat = matrix([N]*M.nrows()).transpose()
+    M = block_matrix([M, mod_mat], ncols=2)
+    K = matrix(M.right_kernel().basis())[:,:2]
+    L = IntegerLattice(K)
+    return L.shortest_vector()
+
+# return whether the input basis is a weak instance against
+# the attack by https://eprint.iacr.org/2023/1433.
+def check_basis(basis, N, D, lam, zeta2, Fp4):
+    Mj = End.action_matrix([0,-1,2,0], basis, N, zeta2, Fp4)
+    Mij = End.action_matrix([-1,0,0,2], basis, N, zeta2, Fp4)
+
+    for idx in [0, 1]:
+        P = basis[idx]
+        pos = ((idx + 1) % 2, idx)
+        sv = shortest_solution_mod(matrix([Mj[pos], Mij[pos]]), N)
+        a = ((sv[0]*Mj + sv[1]*Mij) % N)[idx, idx]
+
+        if (N/D**2) * 2**lam > sv[0]**2 + sv[1]**2:
+            return False
+
+        # verification
+        aP = End.action([-sv[1], -sv[0], 2*sv[0], 2*sv[1]], P, zeta2, Fp4)
+        assert aP == a*P
+
+    M = matrix([
+        [Mj[1,0], Mij[1,0]],
+        [Mj[0,1], Mij[0,1]]
+    ])
+    sv = shortest_solution_mod(M, N)
+    if (N/D)**2 * 2**lam > sv[0]**2 + sv[1]**2:
+        return False
+    
+    T = (sv[0]*Mj + sv[1]*Mij) % N
+    a = T[0, 0]
+    b = T[1 ,1]
+
+    # verification
+    P, Q = basis
+    aP = End.action([-sv[1], -sv[0], 2*sv[0], 2*sv[1]], P, zeta2, Fp4)
+    bQ = End.action([-sv[1], -sv[0], 2*sv[0], 2*sv[1]], Q, zeta2, Fp4)
+    assert aP == a*P and bQ == b*Q
+
+    return True
+
 # OW-PCA PKE
 class QFESTA_PKE:
     def __init__(self, lam):
@@ -53,6 +103,12 @@ class QFESTA_PKE:
 
         E0 = EllipticCurve(Fp2, [1, 0])
         basis2 = ec.basis(E0, 2, a)
+
+        # if basis2 is weak against the Castryck-Vervcauteren attack, replace another random basis
+        is_good_basis = False
+        while not is_good_basis:
+            basis2 = ec.basis(E0, 2, a)
+            is_good_basis = check_basis(basis2, 2**a, min(D1, D2), lam, zeta2, Fp4)
 
         self.p = p
         self.a = a
