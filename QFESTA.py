@@ -55,7 +55,7 @@ def shortest_solution_mod(M, N):
     L = IntegerLattice(K)
     return L.shortest_vector()
 
-# return whether the input basis is a weak instance against
+# return whether the input basis is secure against
 # the attack by https://eprint.iacr.org/2023/1433.
 def check_basis(basis, N, D, lam, zeta2, Fp4):
     Mj = End.action_matrix([0,-1,2,0], basis, N, zeta2, Fp4)
