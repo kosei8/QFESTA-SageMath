@@ -293,9 +293,6 @@ class QFESTA_KEM(QFESTA_PKE):
         shake = SHAKE256.new(m)
         return shake.read(self.n)
 
-    def Hd(self, m):
-        return self.H(b"dash" + m)
-
     def RandomMessage(self):
         return randint(0, 2**(self.a - 2))
 
