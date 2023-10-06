@@ -35,9 +35,9 @@ For example,
 ```
 $ sage main.sage 128
 Set system parameter: lam=128, a=272, b=162, k=131, f=169. 4.86sec.
-Keys are generated. Pubkey 174 bytes. 1.64sec.
-Encaps. Ciphertext 364 bytes. 1.80sec.
-Success Decaps. 2.66sec
+Keys are generated. Pubkey 174 bytes. 1.74sec.
+Encaps. Ciphertext 348 bytes. 1.82sec.
+Success Decaps. 2.65sec
 ```
 
 Benchmark test for security bits 128, 192, and 256 is executed by
