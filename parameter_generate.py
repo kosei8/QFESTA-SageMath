@@ -94,3 +94,30 @@ def SysParam(lam):
         # f should be odd for using the Tate pairing
         f += 2
     return 2*a, 2*b, f, k, D1, D2
+
+def BoundedFactor(n, B):
+    d = 1
+    for l in Primes()[:10000]:
+        while n % l == 0:
+            n //= l
+            d *= l
+            if d > B:
+                return d
+    return None
+
+def SysParam2(lam):
+    a = lam
+    b1 = ceil(log(2, 3)*lam)
+    b2 = 2*b1
+    d1 = 2**a - 3**b1
+    d2 = 2**(2*a) + 2**a * 3**b1 + 3**b2
+    while d1 < 2**lam or d2 < 2**(2*lam):
+        a += 1
+        d1 = 2**a - 3**b1
+        d2 = 2**(2*a) + 2**a * 3**b1 + 3**b2
+    f = 1
+    while (not is_prime(2**(3*a)*3*f - 1)) or f % 3 == 0:
+        # f should be odd for using the Tate pairing
+        f += 2
+    assert d1*d2 + 3**(b1 + b2) == 2**(3*a)
+    return 3*a, b1, b2, f, d1, d2

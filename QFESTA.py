@@ -98,7 +98,7 @@ def check_basis(basis, N, D, lam, zeta2, Fp4):
 # OW-PCA PKE
 class QFESTA_PKE:
     def __init__(self, lam):
-        a, b, f, k, D1, D2 = param.SysParam(lam)
+        a, b1, b2, f, D1, D2 = param.SysParam2(lam)
         p = ZZ(2**a*3*f - 1)
         Fp4, Fp2, zeta2 = param.calcFields(p)
 
@@ -109,13 +109,13 @@ class QFESTA_PKE:
         is_good_basis = False
         while not is_good_basis:
             basis2 = ec.basis(E0, 2, a)
-            is_good_basis = check_basis(basis2, 2**a, min(D1, D2), lam, zeta2, Fp4)
+            is_good_basis = check_basis(basis2, 2**a, min(D1*b1, D2), lam, zeta2, Fp4)
 
         self.p = p
         self.a = a
-        self.b = b
+        self.b1 = b1
+        self.b2 = b2
         self.f = f
-        self.k = k
         self.D1 = D1
         self.D2 = D2
         self.action_matrices = End.action_matrices(basis2, 2**a, zeta2, Fp4)
@@ -146,17 +146,28 @@ class QFESTA_PKE:
         basis2 = self.basis_t2
         a = self.a
         D1 = self.D1
+        b1 = self.b1
         action_matrices = self.action_matrices
 
         # secret key
         sec_key = 2*randint(0, 2**(a-1)) + 1
 
         # public key
-        Pd, Qd = NonSmoothRandomIsog(a, D1, basis2, action_matrices, self.strategy)
+        Pm, Qm = NonSmoothRandomIsog(a, D1, basis2, action_matrices, self.strategy) # D1-isogeny
+        Em = Pm.curve()
+        PQm = Pm + Qm
+        EA, xs = ec.chain_3radials(Em, [Pm.xy()[0], Qm.xy()[0], PQm.xy()[0]], self.zeta3, b1) # 3^b1-isogeny
 
         # transform to a Montgomery curve
-        EA, PQ = ec.WeierstrassToMontgomery(Pd.curve(), (2**(a-2)*Pd).xy()[0], [Pd, Qd])
-        Pd, Qd = PQ
+        x4 = xs[0]
+        for _ in range(a-2):
+            x4 = ec.x_onlyDoubling(EA, x4)
+        EA, xs = ec.WeierstrassToMontgomery(EA, x4, xs, x_only=True)
+        Pd = EA.lift_x(xs[0])
+        Qd = EA.lift_x(xs[1])
+        if not (Pd + Qd).xy()[0] == xs[2]:
+            Qd = -Qd
+
         Pd = sec_key*Pd
         Qd = ZZ(sec_key).inverse_mod(2**a)*Qd
 
@@ -166,14 +177,15 @@ class QFESTA_PKE:
             self.p_byte_len, self.l_power_byte_len
         )
 
-        return sec_key, pub_key
+        return (sec_key, Em, Pm), pub_key
 
     def Enc(self, message, pub_key, seed=None):
         if not seed == None:
             set_random_seed(utilities.bytes_to_integer(seed))
         basis2 = self.basis_t2
         a = self.a
-        b = self.b
+        b1 = self.b1
+        b2 = self.b2
         D1 = self.D1
         D2 = self.D2
         action_matrices = self.action_matrices
@@ -181,7 +193,7 @@ class QFESTA_PKE:
         # decompression
         P, Q = basis2
         EA, PA, QA = compression.decompress_curve_and_two_torsion_basis(
-            self.Fp2, pub_key, (P, Q, D1), a, self.elligator, self.cofactor, [],
+            self.Fp2, pub_key, (P, Q, D1*(3**b1)), a, self.elligator, self.cofactor, [],
             self.p_byte_len, self.l_power_byte_len
         )
 
@@ -191,9 +203,9 @@ class QFESTA_PKE:
         # isogeny from E0 of degree D2
         P1, Q1 = NonSmoothRandomIsog(a, D2, basis2, action_matrices, self.strategy)
 
-        # isogeny from E1 of degree 3^b
+        # isogeny from E1 of degree 3^b2
         PQA = PA + QA
-        E2, xs = ec.chain_3radials(EA, [PA.xy()[0], QA.xy()[0], PQA.xy()[0]], self.zeta3, b)
+        E2, xs = ec.chain_3radials(EA, [PA.xy()[0], QA.xy()[0], PQA.xy()[0]], self.zeta3, b2)
 
         # transform to Montgomery curves.
         # For ProdToJac, 2^(a-1)P1, 2^(a-1)P2 should be (0 0) in the Montgomery curves.
@@ -209,7 +221,7 @@ class QFESTA_PKE:
         if not (P2 + Q2).xy()[0] == xs[2]:
             Q2 = -Q2
         P2, Q2 = beta*P2, beta_inv*Q2
-        if P2[1][0] >= (self.p + 1)//2: # for reduce the randomness of lift_x
+        if P2[1][0] >= (self.p + 1)//2 or (P2[1][0] == 0 and P2[1][1] >= (self.p + 1)//2): # for reduce the randomness of lift_x
             P2 = -P2
             Q2 = -Q2
 
@@ -223,15 +235,16 @@ class QFESTA_PKE:
 
     def Dec(self, ciphertext, sec_key, pub_key):
         a = self.a
-        b = self.b
-        k = self.k
+        b1 = self.b1
+        b2 = self.b2
         D1 = self.D1
         D2 = self.D2
         P, Q = self.basis_t2
+        alpha, Em, Pm = sec_key
 
         # decompress public key
         EA, PA, QA = compression.decompress_curve_and_two_torsion_basis(
-            self.Fp2, pub_key, (P, Q, D1), a, self.elligator, self.cofactor, [],
+            self.Fp2, pub_key, (P, Q, D1*(3**b1)), a, self.elligator, self.cofactor, [],
             self.p_byte_len, self.l_power_byte_len
         )
 
@@ -242,47 +255,28 @@ class QFESTA_PKE:
             self.p_byte_len, self.l_power_byte_len
         )
         E2, P2, Q2 = compression.decompress_curve_and_two_torsion_basis(
-            self.Fp2, ciphertext[l:], (PA, QA, 3**b), a, self.elligator, self.cofactor, [],
+            self.Fp2, ciphertext[l:], (PA, QA, 3**b2), a, self.elligator, self.cofactor, [],
             self.p_byte_len, self.l_power_byte_len
         )
 
-        # degree check
-        if not P2.weil_pairing(Q2, 2**a) == PA.weil_pairing(QA, 2**a)**(3**b):
-            return None
-
-        P1d = 3**b*k*P1
-        Q1d = 3**b*k*Q1
-        P2d = D2*ZZ(sec_key).inverse_mod(2**a)*P2
-        Q2d = D2*sec_key*Q2
+        P1d = D1*P1
+        Q1d = D1*Q1
+        P2d = ZZ(alpha).inverse_mod(2**a)*P2
+        Q2d = alpha*Q2
 
         assert P1d.weil_pairing(Q1d, 2**a)*P2d.weil_pairing(Q2d, 2**a) == 1
-        X, Y = d2isogeny.D2IsogenyImage(E1, E2, P1d, Q1d, P2d, Q2d, a, (E1(0), P2), (E1(0), Q2), self.strategy)
+        X, Y = d2isogeny.D2IsogenyImage(E1, E2, P1d, Q1d, P2d, Q2d, a, (E1(0), P2d), (E1(0), Q2d), self.strategy)
         R, S = X[0], Y[0]
-        if not R.curve().is_isomorphic(EA):
+        if not R.curve().is_isomorphic(Em):
             R, S = X[1], Y[1]
 
         # codomain check
-        if not R.curve().is_isomorphic(EA):
+        if not R.curve().is_isomorphic(Em):
             return None
 
-        iota = R.curve().isomorphism_to(EA)
+        iota = R.curve().isomorphism_to(Em)
         R, S = iota(R), iota(S)
-        m = (ZZ(discrete_log(R, PA, 2**a, operation='+')) * ZZ(3**b*k).inverse_mod(2**a)) % 2**a
-
-        # matrix check
-        if not m*S == (3**b*k)*QA:
-            return None
-
-        # check that message is constructed by an isogeny from E_0 to E_1
-        e = a//2 + 1
-        PAd, QAd = 2**(a-e)*PA, 2**(a-e)*QA
-        P1d, Q1d = 2**(a-e)*P1, 2**(a-e)*Q1
-        PAd, QAd = ZZ(sec_key).inverse_mod(2**e)*PAd, sec_key*QAd
-        P1d, Q1d = ZZ(m).inverse_mod(2**e)*P1d, m*Q1d
-        assert P1d.weil_pairing(Q1d, 2**e)*PAd.weil_pairing(QAd, 2**e) == 1
-        _, codomain = richelot.split_richelot_chain(P1d, Q1d, PAd, QAd, e, self.strategy[e - 1])
-        if not (codomain[0].is_isomorphic(P.curve()) or codomain[1].is_isomorphic(P.curve())):
-            return None
+        m = (ZZ(discrete_log(R, Pm, 2**a, operation='+')) * ZZ(3**(b1+b2)).inverse_mod(2**a)) % 2**a
 
         if m >= 2**(a-1):
             m = 2**a - m
@@ -326,4 +320,5 @@ class QFESTA_KEM(QFESTA_PKE):
         if self.Enc(m, pub_key, self.G(mb)) == ciphertext:
             return self.H(mb + ciphertext)
         else:
+            print("Failed!!!")
             return self.H(s + ciphertext)

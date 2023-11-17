@@ -147,7 +147,7 @@ def precompute_elligator_tables(F):
     T1 = dict()
     T2 = dict()
     # TODO: estimate how large r should be
-    for r in range(1, 30):
+    for r in range(1, 100):
         v = 1 / (1 + u*r**2)
         if v.is_square():
             T2[r] = v

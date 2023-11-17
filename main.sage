@@ -18,8 +18,8 @@ if __name__ == "__main__":
 
     t = time.time()
     KEM = QFESTA.QFESTA_KEM(lam)
-    print("Set system parameter: lam=%d, a=%d, b=%d, k=%d, f=%d. %.2fsec."
-          % (lam, KEM.a, KEM.b, KEM.k, KEM.f, time.time() - t))
+    print("Set system parameter: lam=%d, a=%d, b1=%d, f=%d. %.2fsec."
+          % (lam, KEM.a, KEM.b1, KEM.f, time.time() - t))
 
     t = time.time()
     sec_key, pub_key = KEM.Gen()

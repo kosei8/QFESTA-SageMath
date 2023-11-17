@@ -48,7 +48,7 @@ def cornacchia_smith(q):
         a, b = 1, 1
     else:
         x = Mod(-1, q).sqrt()
-        a, b, c = q, ZZ(x), floor(q**(0.5))
+        a, b, c = q, ZZ(x), floor(sqrt(q))
         while b > c:
             a, b = b, a % b
         t = q - b**2
