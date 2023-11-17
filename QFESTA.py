@@ -5,7 +5,8 @@ from sage.all import (
     discrete_log,
     GF,
     matrix,
-    block_matrix
+    block_matrix,
+    set_random_seed
 )
 from sage.modules.free_module_integer import IntegerLattice
 
@@ -127,6 +128,7 @@ class QFESTA_PKE:
         basis2 = [E0([Fp2ToFp2d(v) for v in P]) for P in basis2]
         self.basis_t2 = basis2
         self.Fp2 = Fp2d
+        self.zeta3 = (-1 + self.Fp2(-3).sqrt())/2
 
         # pre-computed optimized strategies for richelot chain
         self.strategy = dict()
@@ -166,7 +168,9 @@ class QFESTA_PKE:
 
         return sec_key, pub_key
 
-    def Enc(self, message, pub_key):
+    def Enc(self, message, pub_key, seed=None):
+        if not seed == None:
+            set_random_seed(seed)
         basis2 = self.basis_t2
         a = self.a
         b = self.b
@@ -188,9 +192,8 @@ class QFESTA_PKE:
         P1, Q1 = NonSmoothRandomIsog(a, D2, basis2, action_matrices, self.strategy)
 
         # isogeny from E1 of degree 3^b
-        zeta3 = (-1 + EA.base_ring()(-3).sqrt())/2
         PQA = PA + QA
-        E2, xs = ec.chain_3radials(EA, [PA.xy()[0], QA.xy()[0], PQA.xy()[0]], zeta3, b)
+        E2, xs = ec.chain_3radials(EA, [PA.xy()[0], QA.xy()[0], PQA.xy()[0]], self.zeta3, b)
 
         # transform to Montgomery curves.
         # For ProdToJac, 2^(a-1)P1, 2^(a-1)P2 should be (0 0) in the Montgomery curves.
@@ -206,6 +209,9 @@ class QFESTA_PKE:
         if not (P2 + Q2).xy()[0] == xs[2]:
             Q2 = -Q2
         P2, Q2 = beta*P2, beta_inv*Q2
+        if P2[1][0] >= (self.p + 1)//2: # for reduce the randomness of lift_x
+            P2 = -P2
+            Q2 = -Q2
 
         # compression
         ciphertexts = [compression.compress_curve_and_two_torsion_basis(

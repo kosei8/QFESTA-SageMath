@@ -17,6 +17,8 @@ def point_ord(E, l, e):
     while (l**(e-1)*P).is_zero():
         P = (p + 1)//(l**e)*E.random_point()
     assert (l**e*P).is_zero()
+    if P[1][0] >= (p + 1)//2:   # even if the seed of random_point is fixed, the sign of point is random.
+        P = -P
     return P
 
 # return a basis of E[l^e], where l is prime.
@@ -160,7 +162,10 @@ def WeierstrassToMontgomery(E, x4, Ps=[], x_only=False):
     x2 = x_onlyDoubling(E, x4)
     u = 1/(x4 - x2)
     if not x_only:
-        v = u.sqrt()**3   # if E[4] defined over the base field sqrt of u is in the base field.
+        v = u.sqrt()   # if E[4] defined over the base field sqrt of u is in the base field.
+        if v[0] >= (E.base_ring().characteristic() + 1)//2: # for reduce the randomness of sqrt
+            v = -v
+        v = v**3
     A = (E.a2() + (E.a1()/2)**2 + 3*x2) * u
     Mont = EllipticCurve(E.base_ring(), [0, A, 0, 1, 0])
     assert E.j_invariant() == Mont.j_invariant()
