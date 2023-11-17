@@ -170,7 +170,7 @@ class QFESTA_PKE:
 
     def Enc(self, message, pub_key, seed=None):
         if not seed == None:
-            set_random_seed(seed)
+            set_random_seed(utilities.bytes_to_integer(seed))
         basis2 = self.basis_t2
         a = self.a
         b = self.b
@@ -298,28 +298,32 @@ class QFESTA_KEM(QFESTA_PKE):
     def H(self, m):
         shake = SHAKE256.new(m)
         return shake.read(self.n)
-
+    
+    def G(self, m):
+        shake = SHAKE256.new(b"for_enc" + m)
+        return shake.read(self.n)
+    
     def RandomMessage(self):
         return randint(0, 2**(self.a - 2))
-
+    
     def Gen(self):
         sk, pk = super().Gen()
         s = self.RandomMessage()
         s = utilities.integer_to_bytes(s)
         return (sk, s), pk
-
+    
     def Encaps(self, pub_key):
         m = self.RandomMessage()
-        c = self.Enc(m, pub_key)
         mb = utilities.integer_to_bytes(m, self.m_byte_len)
+        c = self.Enc(m, pub_key, self.G(mb))
         K = self.H(mb + c)
         return K, c
     
     def Decaps(self, ciphertext, sec_key, pub_key):
         sk, s = sec_key
         m = self.Dec(ciphertext, sk, pub_key)
-        if m == None:
-            return self.H(s + ciphertext)
-        else:
-            mb = utilities.integer_to_bytes(m, self.m_byte_len)
+        mb = utilities.integer_to_bytes(m, self.m_byte_len)
+        if self.Enc(m, pub_key, self.G(mb)) == ciphertext:
             return self.H(mb + ciphertext)
+        else:
+            return self.H(s + ciphertext)
