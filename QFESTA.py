@@ -6,7 +6,9 @@ from sage.all import (
     GF,
     matrix,
     block_matrix,
-    set_random_seed
+    set_random_seed,
+    log,
+    ceil
 )
 from sage.modules.free_module_integer import IntegerLattice
 
@@ -23,24 +25,25 @@ import richelot_isogenies as richelot
 import utilities
 
 # the image of P, Q under a random isogeny of degree N
-def NonSmoothRandomIsog(e, N, basis2, action_matrices, strategy):
+def NonSmoothRandomIsog(e, n, N, basis2, action_matrices, strategy):
     P, Q = basis2
+    PK, QK = 2**(e-n)*P, 2**(e-n)*Q
     E0 = P.curve()
     p = E0.base_ring().characteristic()
     assert N % 2 == 1
-    assert 2**e > N
+    assert 2**n > N
     assert (p + 1) % 2**e == 0
     assert ((2**e)*P).is_zero() and ((2**e)*Q).is_zero()
     assert ((2**(e-1))*P).weil_pairing((2**(e-1))*Q, 2) == -1
 
-    alpha = quat.FullRepresentInteger(N*(2**e - N), p)
+    alpha = quat.FullRepresentInteger(N*(2**n - N), p)
     vP = End.action_by_matrices(alpha, [1, 0], action_matrices)
-    alphaP = vP[0]*P + vP[1]*Q
+    alphaP = vP[0]*PK + vP[1]*QK
     vQ = End.action_by_matrices(alpha, [0, 1], action_matrices)
-    alphaQ = vQ[0]*P + vQ[1]*Q
+    alphaQ = vQ[0]*PK + vQ[1]*QK
  
-    assert P.weil_pairing(Q, 2**e)**(N*(2**e - N)) == alphaP.weil_pairing(alphaQ, 2**e)
-    X, Y = d2isogeny.D2IsogenyImage(E0, E0, (2**e - N)*P, (2**e - N)*Q, alphaP, alphaQ, e, (P, E0(0)), (Q, E0(0)), strategy)
+    assert PK.weil_pairing(QK, 2**n)**(N*(2**n - N)) == alphaP.weil_pairing(alphaQ, 2**n)
+    X, Y = d2isogeny.D2IsogenyImage(E0, E0, (2**n - N)*PK, (2**n - N)*QK, alphaP, alphaQ, n, (P, E0(0)), (Q, E0(0)), strategy)
     Pd, Qd = X[0], Y[0]
     if not Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N:
         Pd, Qd = X[1], Y[1]
@@ -153,7 +156,7 @@ class QFESTA_PKE:
         sec_key = 2*randint(0, 2**(a-1)) + 1
 
         # public key
-        Pm, Qm = NonSmoothRandomIsog(a, D1, basis2, action_matrices, self.strategy) # D1-isogeny
+        Pm, Qm = NonSmoothRandomIsog(a, a, D1, basis2, action_matrices, self.strategy) # D1-isogeny
         Em = Pm.curve()
         PQm = Pm + Qm
         EA, xs = ec.chain_3radials(Em, [Pm.xy()[0], Qm.xy()[0], PQm.xy()[0]], self.zeta3, b1) # 3^b1-isogeny
@@ -201,7 +204,8 @@ class QFESTA_PKE:
         beta_inv = ZZ(beta).inverse_mod(2**a)
 
         # isogeny from E0 of degree D2
-        P1, Q1 = NonSmoothRandomIsog(a, D2, basis2, action_matrices, self.strategy)
+        ad = ceil(log(D2, 2)) + 1
+        P1, Q1 = NonSmoothRandomIsog(a, ad, D2, basis2, action_matrices, self.strategy)
 
         # isogeny from E1 of degree 3^b2
         PQA = PA + QA
