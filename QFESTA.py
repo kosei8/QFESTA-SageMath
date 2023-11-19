@@ -46,7 +46,12 @@ def NonSmoothRandomIsog(e, n, N, basis2, action_matrices, strategy):
     X, Y = d2isogeny.D2IsogenyImage(E0, E0, (2**n - N)*PK, (2**n - N)*QK, alphaP, alphaQ, n, (P, E0(0)), (Q, E0(0)), strategy)
     Pd, Qd = X[0], Y[0]
     if not Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N:
-        Pd, Qd = X[1], Y[1]
+        if Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**(- N):
+            Qd = -Qd
+        else:
+            Pd, Qd = X[1], Y[1]
+            if not Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N:
+                Qd = -Qd
     assert Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N
 
     return Pd, Qd
@@ -156,7 +161,7 @@ class QFESTA_PKE:
         sec_key = 2*randint(0, 2**(a-1)) + 1
 
         # public key
-        Pm, Qm = NonSmoothRandomIsog(a, a, D1, basis2, action_matrices, self.strategy) # D1-isogeny
+        Pm, Qm = NonSmoothRandomIsog(a, a-1, D1, basis2, action_matrices, self.strategy) # D1-isogeny
         Em = Pm.curve()
         PQm = Pm + Qm
         EA, xs = ec.chain_3radials(Em, [Pm.xy()[0], Qm.xy()[0], PQm.xy()[0]], self.zeta3, b1) # 3^b1-isogeny
@@ -204,8 +209,7 @@ class QFESTA_PKE:
         beta_inv = ZZ(beta).inverse_mod(2**a)
 
         # isogeny from E0 of degree D2
-        ad = ceil(log(D2, 2)) + 1
-        P1, Q1 = NonSmoothRandomIsog(a, ad, D2, basis2, action_matrices, self.strategy)
+        P1, Q1 = NonSmoothRandomIsog(a, a-1, D2, basis2, action_matrices, self.strategy)
 
         # isogeny from E1 of degree 3^b2
         PQA = PA + QA
