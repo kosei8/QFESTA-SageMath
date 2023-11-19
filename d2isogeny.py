@@ -1,13 +1,13 @@
 from sage.all import (
     EllipticCurve,
-    HyperellipticCurve,
-    PolynomialRing,
-    Matrix
+    PolynomialRing
 )
 
 import elliptic_curve as ec
 import richelot_isogenies as richelot
 import utilities_festa as utilities
+from theta_structures.couple_point import CouplePoint
+from theta_isogenies.product_isogeny_sqrt import EllipticProductIsogenySqrt
 
 # the images of R and S under a (2^e, 2^e)-isogeny from E1 time E2 with kernel <(P1, P2), (Q1, Q2)>
 def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R, S, strategy):
@@ -39,24 +39,16 @@ def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R, S, strategy):
         # transform to Montgomery curves. ProdToJac requires ((0,0), (0,0)) in the kernel.
         E1, PQ1RS = ec.WeierstrassToMontgomery(P1.curve(), (2**(e-2)*P1).xy()[0], [P1, Q1, R[0], S[0]])
         E2, PQ2RS = ec.WeierstrassToMontgomery(P2.curve(), (2**(e-2)*P2).xy()[0], [P2, Q2, R[1], S[1]])
-        R, S = [(PQ1RS[i], PQ2RS[i]) for i in range(2,4)]
-        if e - 1 in strategy:
-            st = strategy[e-1]
-        else:
-            st = utilities.optimised_strategy(e-1)
-        chain = richelot.compute_richelot_chain(PQ1RS[:2] + PQ2RS[:2], e, st)
-        for phi in chain:
-            R, S = phi(R), phi(S)
-        return R, S
+        kernel = [CouplePoint(PQ1RS[i], PQ2RS[i]) for i in range(2)]
+        R, S = [CouplePoint(PQ1RS[i], PQ2RS[i]) for i in range(2,4)]
+        Phi = EllipticProductIsogenySqrt(kernel, e)
+        return Phi(R), Phi(S)
     else:
-        if e - 1 in strategy:
-            st = strategy[e-1]
-        else:
-            st = utilities.optimised_strategy(e-1)
-        chain = richelot.compute_richelot_chain([P1, Q1, P2, Q2], e, st)
-        for phi in chain:
-            R, S = phi(R), phi(S)
-        return R, S
+        kernel = [CouplePoint(P1, P2), CouplePoint(Q1, Q2)]
+        Phi = EllipticProductIsogenySqrt(kernel, e)
+        R = CouplePoint(R[0], R[1])
+        S = CouplePoint(S[0], S[1])
+        return Phi(R), Phi(S)
 
 # (2,2)-isogeny from E1 times E2 with kernel 2**(e-1)*<(P1, P2), (Q1, Q2)>
 def FromProdToProd(P1, Q1, P2, Q2, e):
