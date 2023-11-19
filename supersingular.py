@@ -11,7 +11,7 @@ from sage.all import (
 )
 
 # Local imports
-from utilities import has_order_D, BiDLP, weil_pairing_pari, sqrt_Fp2
+from utilities_festa import has_order_D, BiDLP, weil_pairing_pari, sqrt_Fp2
 
 # =========================================== #
 # Compute points of order D and Torsion Bases #

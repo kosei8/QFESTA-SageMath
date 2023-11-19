@@ -7,7 +7,7 @@ from sage.all import (
 
 import elliptic_curve as ec
 import richelot_isogenies as richelot
-import utilities
+import utilities_festa as utilities
 
 # the images of R and S under a (2^e, 2^e)-isogeny from E1 time E2 with kernel <(P1, P2), (Q1, Q2)>
 def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R, S, strategy):

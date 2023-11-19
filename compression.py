@@ -8,7 +8,7 @@ from sage.all import EllipticCurve, inverse_mod
 
 # Local imports
 from supersingular import entangled_torsion_basis
-from utilities import (
+from utilities_festa import (
     integer_to_bytes,
     bytes_to_integer,
     weil_pairing_pari,

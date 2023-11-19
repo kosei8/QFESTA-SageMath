@@ -39,7 +39,7 @@ from sage.all import (
 # local imports
 from divisor_arithmetic import affine_dbl_iter, affine_add
 from supersingular import weil_pairing_pari
-from utilities import sqrt_Fp2, invert_mod_polynomial_quadratic, invert_mod_polynomial_quartic
+from utilities_festa import sqrt_Fp2, invert_mod_polynomial_quadratic, invert_mod_polynomial_quartic
 
 def FromProdToJac(P2, Q2, R2, S2):
     """

@@ -20,7 +20,7 @@ import d2isogeny
 import supersingular
 import compression
 import richelot_isogenies as richelot
-import utilities
+import utilities_festa as utilities
 
 # the image of P, Q under a random isogeny of degree N
 def NonSmoothRandomIsog(e, N, basis2, action_matrices, strategy):

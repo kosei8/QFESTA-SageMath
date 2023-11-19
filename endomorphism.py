@@ -11,7 +11,7 @@ from sage.all import (
 )
 
 import elliptic_curve as ec
-import utilities
+import utilities_festa as utilities
 
 # action of square root of -1
 def i_action(P, zeta2):

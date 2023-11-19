@@ -2,7 +2,7 @@ import importlib, sys, time
 import parameter_generate as param
 import elliptic_curve as ec
 import QFESTA
-import utilities
+import utilities_festa as utilities
 importlib.reload(ec)
 importlib.reload(param)
 importlib.reload(QFESTA)
