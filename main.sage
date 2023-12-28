@@ -14,6 +14,8 @@ if __name__ == "__main__":
     else:
         lam = 20
 
+    sys.setrecursionlimit(2000)
+
     utilities.speed_up_sagemath()
 
     t = time.time()
