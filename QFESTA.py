@@ -6,9 +6,7 @@ from sage.all import (
     GF,
     matrix,
     block_matrix,
-    set_random_seed,
-    log,
-    ceil
+    set_random_seed
 )
 from sage.modules.free_module_integer import IntegerLattice
 
@@ -25,34 +23,38 @@ import richelot_isogenies as richelot
 import utilities_festa as utilities
 
 # the image of P, Q under a random isogeny of degree N
-def NonSmoothRandomIsog(e, n, N, basis2, action_matrices, strategy):
+def NonSmoothRandomIsog(e, N, basis2, action_matrices, strategy, use_theta=False):
     P, Q = basis2
-    PK, QK = 2**(e-n)*P, 2**(e-n)*Q
     E0 = P.curve()
     p = E0.base_ring().characteristic()
     assert N % 2 == 1
-    assert 2**n > N
     assert (p + 1) % 2**e == 0
     assert ((2**e)*P).is_zero() and ((2**e)*Q).is_zero()
     assert ((2**(e-1))*P).weil_pairing((2**(e-1))*Q, 2) == -1
 
-    alpha = quat.FullRepresentInteger(N*(2**n - N), p)
+    alpha = quat.FullRepresentInteger(N*(2**e - N), p)
     vP = End.action_by_matrices(alpha, [1, 0], action_matrices)
-    alphaP = vP[0]*PK + vP[1]*QK
+    alphaP = vP[0]*P + vP[1]*Q
     vQ = End.action_by_matrices(alpha, [0, 1], action_matrices)
-    alphaQ = vQ[0]*PK + vQ[1]*QK
+    alphaQ = vQ[0]*P + vQ[1]*Q
  
-    assert PK.weil_pairing(QK, 2**n)**(N*(2**n - N)) == alphaP.weil_pairing(alphaQ, 2**n)
-    X, Y = d2isogeny.D2IsogenyImage(E0, E0, (2**n - N)*PK, (2**n - N)*QK, alphaP, alphaQ, n, (P, E0(0)), (Q, E0(0)), strategy)
-    Pd, Qd = X[0], Y[0]
-    if not Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N:
-        if Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**(- N):
-            Qd = -Qd
-        else:
+    assert P.weil_pairing(Q, 2**e)**(N*(2**e - N)) == alphaP.weil_pairing(alphaQ, 2**e)
+    if use_theta:
+        X, Y, XY = d2isogeny.D2IsogenyImage(E0, E0, (2**e - N)*P, (2**e - N)*Q, alphaP, alphaQ, e, [(P, E0(0)), (Q, E0(0)), (P + Q, E0(0))], strategy, use_theta)
+        if not (X[0] + Y[0] == XY[0] or X[0] + Y[0] == -XY[0]):
+            Y[0] = -Y[0]
+        Pd, Qd = X[0], Y[0]
+        if not Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N:
+            if not (X[1] + Y[1] == XY[1] or X[1] + Y[1] == -XY[1]):
+                Y[1] = -Y[1]
             Pd, Qd = X[1], Y[1]
-            if not Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N:
-                Qd = -Qd
-    assert Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N
+        assert Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N
+    else:
+        X, Y = d2isogeny.D2IsogenyImage(E0, E0, (2**e - N)*P, (2**e - N)*Q, alphaP, alphaQ, e, [(P, E0(0)), (Q, E0(0))], strategy, use_theta)
+        Pd, Qd = X[0], Y[0]
+        if not Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N:
+            Pd, Qd = X[1], Y[1]
+        assert Pd.weil_pairing(Qd, 2**e) == P.weil_pairing(Q, 2**e)**N
 
     return Pd, Qd
 
@@ -105,7 +107,7 @@ def check_basis(basis, N, D, lam, zeta2, Fp4):
 
 # OW-PCA PKE
 class QFESTA_PKE:
-    def __init__(self, lam):
+    def __init__(self, lam, use_theta=False):
         a, b1, b2, f, D1, D2 = param.SysParam2(lam)
         p = ZZ(2**a*3*f - 1)
         Fp4, Fp2, zeta2 = param.calcFields(p)
@@ -150,6 +152,8 @@ class QFESTA_PKE:
         self.pk_bytes = 2*self.p_byte_len + 3*self.l_power_byte_len
         self.elligator = supersingular.precompute_elligator_tables(Fp2d)
 
+        self.use_theta = use_theta
+
     def Gen(self):
         basis2 = self.basis_t2
         a = self.a
@@ -161,7 +165,7 @@ class QFESTA_PKE:
         sec_key = 2*randint(0, 2**(a-1)) + 1
 
         # public key
-        Pm, Qm = NonSmoothRandomIsog(a, a-1, D1, basis2, action_matrices, self.strategy) # D1-isogeny
+        Pm, Qm = NonSmoothRandomIsog(a, D1, basis2, action_matrices, self.strategy, self.use_theta) # D1-isogeny
         Em = Pm.curve()
         PQm = Pm + Qm
         EA, xs = ec.chain_3radials(Em, [Pm.xy()[0], Qm.xy()[0], PQm.xy()[0]], self.zeta3, b1) # 3^b1-isogeny
@@ -209,7 +213,7 @@ class QFESTA_PKE:
         beta_inv = ZZ(beta).inverse_mod(2**a)
 
         # isogeny from E0 of degree D2
-        P1, Q1 = NonSmoothRandomIsog(a, a-1, D2, basis2, action_matrices, self.strategy)
+        P1, Q1 = NonSmoothRandomIsog(a, D2, basis2, action_matrices, self.strategy, self.use_theta)
 
         # isogeny from E1 of degree 3^b2
         PQA = PA + QA
@@ -273,17 +277,17 @@ class QFESTA_PKE:
         Q2d = alpha*Q2
 
         assert P1d.weil_pairing(Q1d, 2**a)*P2d.weil_pairing(Q2d, 2**a) == 1
-        X, Y = d2isogeny.D2IsogenyImage(E1, E2, P1d, Q1d, P2d, Q2d, a, (E1(0), P2d), (E1(0), Q2d), self.strategy)
-        R, S = X[0], Y[0]
+        X = d2isogeny.D2IsogenyImage(E1, E2, P1d, Q1d, P2d, Q2d, a, [(E1(0), P2d)], self.strategy, self.use_theta)
+        R = X[0][0]
         if not R.curve().is_isomorphic(Em):
-            R, S = X[1], Y[1]
+            R = X[0][1]
 
         # codomain check
         if not R.curve().is_isomorphic(Em):
             return None
 
         iota = R.curve().isomorphism_to(Em)
-        R, S = iota(R), iota(S)
+        R = iota(R)
         m = (ZZ(discrete_log(R, Pm, 2**a, operation='+')) * ZZ(3**(b1+b2)).inverse_mod(2**a)) % 2**a
 
         if m >= 2**(a-1):
@@ -292,8 +296,8 @@ class QFESTA_PKE:
 
 # IND-CCA KEM
 class QFESTA_KEM(QFESTA_PKE):
-    def __init__(self, lam):
-        super().__init__(lam)
+    def __init__(self, lam, use_theta=False):
+        super().__init__(lam, use_theta)
         self.m_byte_len = ((self.a - 2) + 7) // 8
         self.n = self.m_byte_len    # byte length of output of Hash function = message length
 

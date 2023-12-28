@@ -9,8 +9,8 @@ import utilities_festa as utilities
 from theta_structures.couple_point import CouplePoint
 from theta_isogenies.product_isogeny_sqrt import EllipticProductIsogenySqrt
 
-# the images of R and S under a (2^e, 2^e)-isogeny from E1 time E2 with kernel <(P1, P2), (Q1, Q2)>
-def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R, S, srategy):
+# the images of pairs of points in Rs under a (2^e, 2^e)-isogeny from E1 time E2 with kernel <(P1, P2), (Q1, Q2)>
+def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, Rs, strategy, use_theta=False):
     if E1.j_invariant() == E2.j_invariant() == 1728:
         # product of elliptic curves with j-invariant 1728
         cnt = 0
@@ -20,7 +20,7 @@ def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R, S, srategy):
             if ret:
                 h, P1, P2, Q1, Q2, phi = ret
                 e -= 1
-                R, S = phi(R), phi(S)
+                Rs = [phi(R) for R in Rs]
                 cnt += 1
             else:
                 break
@@ -33,22 +33,43 @@ def D2IsogenyImage(E1, E2, P1, Q1, P2, Q2, e, R, S, srategy):
             if ret:
                 h, P1, P2, Q1, Q2, phi = ret
                 e -= 1
-                R, S = phi(R), phi(S)
+                Rs = [phi(R) for R in Rs]
 
         # Here, we can apply ProdToJac
         # transform to Montgomery curves. ProdToJac requires ((0,0), (0,0)) in the kernel.
-        E1, PQ1RS = ec.WeierstrassToMontgomery(P1.curve(), (2**(e-2)*P1).xy()[0], [P1, Q1, R[0], S[0]])
-        E2, PQ2RS = ec.WeierstrassToMontgomery(P2.curve(), (2**(e-2)*P2).xy()[0], [P2, Q2, R[1], S[1]])
-        kernel = [CouplePoint(PQ1RS[i], PQ2RS[i]) for i in range(2)]
-        R, S = [CouplePoint(PQ1RS[i], PQ2RS[i]) for i in range(2,4)]
-        Phi = EllipticProductIsogenySqrt(kernel, e)
-        return Phi(R), Phi(S)
+        E1, PQ1Rs = ec.WeierstrassToMontgomery(P1.curve(), (2**(e-2)*P1).xy()[0], [P1, Q1] + [R[0] for R in Rs])
+        E2, PQ2Rs = ec.WeierstrassToMontgomery(P2.curve(), (2**(e-2)*P2).xy()[0], [P2, Q2] + [R[1] for R in Rs])
+
+        if use_theta:
+            kernel = [CouplePoint(PQ1Rs[i], PQ2Rs[i]) for i in range(2)]
+            Rs = [CouplePoint(PQ1Rs[i], PQ2Rs[i]) for i in range(2,len(PQ1Rs))]
+            phi = EllipticProductIsogenySqrt(kernel, e)
+            Rs = [phi(R) for R in Rs]
+        else:
+            Rs = [CouplePoint(PQ1Rs[i], PQ2Rs[i]) for i in range(2,len(PQ1Rs))]
+            if e - 1 in strategy:
+                st = strategy[e-1]
+            else:
+                st = utilities.optimised_strategy(e-1)
+            chain = richelot.compute_richelot_chain(PQ1Rs[:2] + PQ2Rs[:2], e, st)
+            for phi in chain:
+                Rs = [phi((R[0], R[1])) for R in Rs]
+        return Rs
     else:
-        kernel = [CouplePoint(P1, P2), CouplePoint(Q1, Q2)]
-        Phi = EllipticProductIsogenySqrt(kernel, e)
-        R = CouplePoint(R[0], R[1])
-        S = CouplePoint(S[0], S[1])
-        return Phi(R), Phi(S)
+        if use_theta:
+            kernel = [CouplePoint(P1, P2), CouplePoint(Q1, Q2)]
+            phi = EllipticProductIsogenySqrt(kernel, e)
+            Rs = [CouplePoint(R[0], R[1]) for R in Rs]
+            Rs = [phi(R) for R in Rs]
+        else:
+            if e - 1 in strategy:
+                st = strategy[e-1]
+            else:
+                st = utilities.optimised_strategy(e-1)
+            chain = richelot.compute_richelot_chain([P1, Q1, P2, Q2], e, st)
+            for phi in chain:
+                Rs = [phi((R[0], R[1])) for R in Rs]
+        return Rs
 
 # (2,2)-isogeny from E1 times E2 with kernel 2**(e-1)*<(P1, P2), (Q1, Q2)>
 def FromProdToProd(P1, Q1, P2, Q2, e):

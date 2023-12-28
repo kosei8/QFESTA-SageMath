@@ -9,17 +9,19 @@ importlib.reload(QFESTA)
 
 if __name__ == "__main__":
     args = sys.argv
+    use_theta = False
     if len(args) > 1:
         lam = int(args[1])
+        if len(args) > 2 and args[2] == "theta":
+            use_theta = True
     else:
         lam = 20
 
-    sys.setrecursionlimit(2000)
-
+    sys.setrecursionlimit(2000) # for using strategy for lam=256 in theta isogenies
     utilities.speed_up_sagemath()
 
     t = time.time()
-    KEM = QFESTA.QFESTA_KEM(lam)
+    KEM = QFESTA.QFESTA_KEM(lam, use_theta)
     print("Set system parameter: lam=%d, a=%d, b1=%d, f=%d. %.2fsec."
           % (lam, KEM.a, KEM.b1, KEM.f, time.time() - t))
 
