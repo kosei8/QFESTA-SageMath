@@ -15,9 +15,20 @@ The following files are from FESTA-SageMath:
 - divisor_arithmetic.py
 - richelot_isogenies.py
 - supersingular.py
-- utilities.py
+- utilities_festa.py
 
 [^1]: committed on Jun 2, 2023; *commit id*: 7bc6c47eb3b87fd483be07fbbb4666174132d1a9.
+
+## Theta isogenies
+The altorithm for (2,2)-isogenies using theta model by
+[Dartois-Maino-Pope-Robert](https://eprint.iacr.org/2023/1747)
+is also available.
+We use their implementation
+[Theta-Sagemath](https://github.com/ThetaIsogenies/two-isogenies).
+In particular, the files in the following folders are from this.
+- theta_isogenies
+- theta_structure
+- utilities
 
 ## Usage
 **Requirements**:
@@ -29,15 +40,22 @@ pip install -r pycryptodome
 
 You can execute QFESTA by the following command:
 ```
-sage main.sage {secruty bits}
+sage main.sage {secruty bits} {"theta" if using theta isogenies}
 ```
 For example,
 ```
 $ sage main.sage 128
-Set system parameter: lam=128, a=272, b=162, k=131, f=169. 4.86sec.
-Keys are generated. Pubkey 174 bytes. 1.74sec.
-Encaps. Ciphertext 348 bytes. 1.82sec.
-Success Decaps. 2.65sec
+Set system parameter: lam=128, a=390, b1=81, f=55. 9.67sec.
+Keys are generated. Pubkey 247 bytes. 3.13sec.
+Encaps. Ciphertext 494 bytes. 3.38sec.
+Success Decaps. 7.75sec
+```
+```
+$ sage main.sage 128 theta
+Set system parameter: lam=128, a=390, b1=81, f=55. 9.16sec.
+Keys are generated. Pubkey 247 bytes. 1.16sec.
+Encaps. Ciphertext 494 bytes. 1.80sec.
+Success Decaps. 4.72sec
 ```
 
 Benchmark test for security bits 128, 192, and 256 is executed by
