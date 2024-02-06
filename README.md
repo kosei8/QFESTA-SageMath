@@ -29,7 +29,7 @@ The following files are from FESTA-SageMath:
 [^1]: committed on Jun 2, 2023; *commit id*: 7bc6c47eb3b87fd483be07fbbb4666174132d1a9.
 
 We use theta model for the computation of (2, 2)-isogenies as default.
-For this, we use the following files from Theta-SageMath:
+For this, we use the files in the following folders from Theta-SageMath:
 - theta_isogenies
 - theta_structure
 - utilities
@@ -44,7 +44,7 @@ pip install -r pycryptodome
 
 You can execute QFESTA by the following command:
 ```
-sage main.sage {secruty bits} {"mum" if using Mumford model by FESTA-SageMath}
+sage main.sage {security bits} {"mum" if using Mumford model by FESTA-SageMath}
 ```
 For example,
 ```
