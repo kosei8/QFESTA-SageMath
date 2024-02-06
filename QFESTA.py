@@ -72,19 +72,6 @@ def check_basis(basis, N, D, lam, zeta2, Fp4):
     Mj = End.action_matrix([0,-1,2,0], basis, N, zeta2, Fp4)
     Mij = End.action_matrix([-1,0,0,2], basis, N, zeta2, Fp4)
 
-    for idx in [0, 1]:
-        P = basis[idx]
-        pos = ((idx + 1) % 2, idx)
-        sv = shortest_solution_mod(matrix([Mj[pos], Mij[pos]]), N)
-        a = ((sv[0]*Mj + sv[1]*Mij) % N)[idx, idx]
-
-        if (N/D**2) * 2**lam > sv[0]**2 + sv[1]**2:
-            return False
-
-        # verification
-        aP = End.action([-sv[1], -sv[0], 2*sv[0], 2*sv[1]], P, zeta2, Fp4)
-        assert aP == a*P
-
     M = matrix([
         [Mj[1,0], Mij[1,0]],
         [Mj[0,1], Mij[0,1]]
@@ -92,7 +79,7 @@ def check_basis(basis, N, D, lam, zeta2, Fp4):
     sv = shortest_solution_mod(M, N)
     if (N/D)**2 * 2**lam > sv[0]**2 + sv[1]**2:
         return False
-    
+
     T = (sv[0]*Mj + sv[1]*Mij) % N
     a = T[0, 0]
     b = T[1 ,1]
