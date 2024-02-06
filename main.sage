@@ -9,11 +9,11 @@ importlib.reload(QFESTA)
 
 if __name__ == "__main__":
     args = sys.argv
-    use_theta = False
+    use_theta = True
     if len(args) > 1:
         lam = int(args[1])
-        if len(args) > 2 and args[2] == "theta":
-            use_theta = True
+        if len(args) > 2 and args[2] == "mum":
+            use_theta = False
     else:
         lam = 20
 

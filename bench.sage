@@ -13,8 +13,9 @@ if __name__ == "__main__":
     sys.setrecursionlimit(2000)
 
     N = 10
+    print("using Mumford model")
     for lam in [128, 192, 256]:
-        KEM = QFESTA.QFESTA_KEM(lam)
+        KEM = QFESTA.QFESTA_KEM(lam, use_theta=False)
 
         t_gen = 0
         t_enc = 0
@@ -32,7 +33,7 @@ if __name__ == "__main__":
             assert K == Kd
         print("lam=%d: %.2f, %.2f, %.2f" % (lam, t_gen/N, t_enc/N, t_dec/N))
 
-    print("using theta")
+    print("using theta model")
     for lam in [128, 192, 256]:
         KEM = QFESTA.QFESTA_KEM(lam, use_theta=True)
 

@@ -94,7 +94,7 @@ def check_basis(basis, N, D, lam, zeta2, Fp4):
 
 # OW-PCA PKE
 class QFESTA_PKE:
-    def __init__(self, lam, use_theta=False):
+    def __init__(self, lam, use_theta=True):
         a, b1, b2, f, D1, D2 = param.SysParam2(lam)
         p = ZZ(2**a*3*f - 1)
         Fp4, Fp2, zeta2 = param.calcFields(p)
@@ -283,7 +283,7 @@ class QFESTA_PKE:
 
 # IND-CCA KEM
 class QFESTA_KEM(QFESTA_PKE):
-    def __init__(self, lam, use_theta=False):
+    def __init__(self, lam, use_theta=True):
         super().__init__(lam, use_theta)
         self.m_byte_len = ((self.a - 2) + 7) // 8
         self.n = self.m_byte_len    # byte length of output of Hash function = message length

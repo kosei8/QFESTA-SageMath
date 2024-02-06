@@ -6,10 +6,19 @@ proposed in [QFESTA: Efficient Algorithms and Parameters for FESTA using Quatern
 using [SageMath](https://www.sagemath.org).
 
 Our code is partially based on 
-[FESTA-SageMath](https://github.com/FESTA-PKE/FESTA-SageMath/tree/main) [^1].
+[FESTA-SageMath](https://github.com/FESTA-PKE/FESTA-SageMath/tree/main) [^1]
+by
+[Basso-Maino-Pope](https://link.springer.com/chapter/10.1007/978-981-99-8739-9_4)
+and
+[Theta-Sagemath](https://github.com/ThetaIsogenies/two-isogenies)
+by
+[Dartois-Maino-Pope-Robert](https://eprint.iacr.org/2023/1747).
+
 In particular, we use the FESTA-SageMath code for
-the computation of isogenies between principally polarized abelian surfaces
-and the key compression.
+the key compression
+and
+the computation of (2, 2)-isogenies
+(the latter is optional).
 The following files are from FESTA-SageMath:
 - compression.py
 - divisor_arithmetic.py
@@ -19,13 +28,8 @@ The following files are from FESTA-SageMath:
 
 [^1]: committed on Jun 2, 2023; *commit id*: 7bc6c47eb3b87fd483be07fbbb4666174132d1a9.
 
-## Theta isogenies
-The altorithm for (2,2)-isogenies using theta model by
-[Dartois-Maino-Pope-Robert](https://eprint.iacr.org/2023/1747)
-is also available.
-We use their implementation
-[Theta-Sagemath](https://github.com/ThetaIsogenies/two-isogenies).
-In particular, the files in the following folders are from this.
+We use theta model for the computation of (2, 2)-isogenies as default.
+For this, we use the following files from Theta-SageMath:
 - theta_isogenies
 - theta_structure
 - utilities
@@ -40,22 +44,22 @@ pip install -r pycryptodome
 
 You can execute QFESTA by the following command:
 ```
-sage main.sage {secruty bits} {"theta" if using theta isogenies}
+sage main.sage {secruty bits} {"mum" if using Mumford model by FESTA-SageMath}
 ```
 For example,
 ```
 $ sage main.sage 128
-Set system parameter: lam=128, a=390, b1=81, f=55. 9.67sec.
-Keys are generated. Pubkey 247 bytes. 3.13sec.
-Encaps. Ciphertext 494 bytes. 3.38sec.
-Success Decaps. 7.75sec
-```
-```
-$ sage main.sage 128 theta
 Set system parameter: lam=128, a=390, b1=81, f=55. 9.16sec.
 Keys are generated. Pubkey 247 bytes. 1.16sec.
 Encaps. Ciphertext 494 bytes. 1.80sec.
 Success Decaps. 4.72sec
+```
+```
+$ sage main.sage 128 mum
+Set system parameter: lam=128, a=390, b1=81, f=55. 9.67sec.
+Keys are generated. Pubkey 247 bytes. 3.13sec.
+Encaps. Ciphertext 494 bytes. 3.38sec.
+Success Decaps. 7.75sec
 ```
 
 Benchmark test for security bits 128, 192, and 256 is executed by
