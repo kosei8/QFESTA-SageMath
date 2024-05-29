@@ -1,8 +1,5 @@
-import cProfile
-import pstats
-import time
-import sys
 import os
+import sys
 
 # .env ファイルのパス
 env_path = '.env'
@@ -51,9 +48,8 @@ for arg in sys.argv[1:]:
 
 # PKE = FESTA
 NAME = "QFESTA_" + SECURITY
-N_Enc = 10
 
-uf.print_info(f"(2,2)-Isogeny Benchmarking {NAME}")
+uf.print_info(f"Required points for strategy {NAME}")
 
 # set variables
 a, b1, b2, f, D1, D2 = pm.SysParam2(int(SECURITY))
@@ -76,7 +72,9 @@ b = 390
 
 
 # strategy
-strategy = us.optimised_strategy(b - 1)
+# strategy = us.optimised_strategy(b - 1)
+# points = 11
+strategy, points = us.my_strategy(b - 1, 1, 4)
 # print(strategy)
 
 # 256
@@ -118,28 +116,10 @@ glueQ1 = E1(glueQ1)
 glueP2 = E2(glueP2)
 glueQ2 = E2(glueQ2)
 
-# ========================= #
-#      Start Profiling      #
-# ========================= #
-# Start the profiler
-setup_time = time.time()
-pr = cProfile.Profile()
-pr.enable()
-
 # ===================== #
 #         Main          #
 # ===================== #
-for _ in range(N_Enc):
-    chain, h = ri.split_richelot_chain(glueP1, glueQ1, glueP2, glueQ2, b, strategy)
+chain, h, mem_num = ri.split_richelot_chain(glueP1, glueQ1, glueP2, glueQ2, b, strategy, True)
 phi = chain
-
-
-# ========================= #
-#       End Profiling       #
-# ========================= #
-
-pr.disable()
-pr.dump_stats("festa_keygen.cProfile")
-uf.print_info(f"(2,2)-Isogeny took: {(time.time() -  setup_time):.3f} seconds")
-p = pstats.Stats("festa_keygen.cProfile")
-p.strip_dirs().sort_stats("cumtime").print_stats(50)
+print(mem_num)
+print(points == mem_num)

@@ -1,3 +1,4 @@
+from collections import deque
 # ================================================ #
 #     Compute optimised strategy for (2,2)-chain   #
 # ================================================ #
@@ -122,3 +123,36 @@ def optimised_strategy(n):
     l = convert(n, checkpoints)
 
     return l
+
+def my_strategy(initial_h, h_threshold, scale):
+    s = []
+    h = deque()
+    h.append(initial_h)
+    point_memory = 0
+    while h:
+        ## update point_memory
+        if len(h) > point_memory:
+            point_memory = len(h)
+        ## update h
+        height = h.pop()
+        if height == 1:
+            h_next = deque()
+            while h:
+                height = h.popleft()
+                h_next.append(height-1)
+            h = h_next
+        elif h_threshold < height:
+            h.append(height)
+            h_dash = int(height//scale)
+            if(h_dash > h_threshold):
+                h.append(h_dash)
+                s.append(height - h_dash)
+            else:
+                h.append(h_threshold)
+                s.append(height - h_threshold)
+        else: 
+            h.append(height)
+            h.append(height-1)
+            s.append(1)
+        # print(h)
+    return s, point_memory

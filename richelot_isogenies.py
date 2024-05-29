@@ -503,7 +503,7 @@ def _check_maximally_isotropic(P, Q, R, S, a):
 
     return True, two_torsion
 
-def split_richelot_chain(P, Q, R, S, a, strategy):
+def split_richelot_chain(P, Q, R, S, a, strategy, points=False):
     r"""
     Given curves C, E and points (P, Q) \in E
                                  (R, S) \in E'
@@ -551,6 +551,7 @@ def split_richelot_chain(P, Q, R, S, a, strategy):
     # and `kernel_elements`
     ker = (D1, D2)
     kernel_elements = [ker]
+    memory_points = 0
 
     # ======================================= #
     #  Middle Steps                           #
@@ -572,6 +573,8 @@ def split_richelot_chain(P, Q, R, S, a, strategy):
             kernel_elements.append(ker)
             prev += strategy[strat_idx]
             strat_idx += 1
+            if len(kernel_elements) > memory_points:
+                memory_points = len(kernel_elements)
 
         # Compute the next step in the isogeny with the divisors D1, D2
         D1, D2 = ker
@@ -604,7 +607,11 @@ def split_richelot_chain(P, Q, R, S, a, strategy):
     # ======================================= #
     f, h = FromJacToProd(G1, G2, G3)
     richelot_chain.append(f)
-    return richelot_chain, h
+    
+    if points:
+        return richelot_chain, h, memory_points
+    else:
+        return richelot_chain, h
 
 def compute_richelot_chain(ker_Phi, b, strategy):
     """

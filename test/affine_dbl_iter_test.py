@@ -2,7 +2,25 @@ import cProfile
 import pstats
 import time
 import sys
-sys.path.append('/Users/konami/utokyo/00_lab/software/QFESTA-SageMath')
+import os
+
+# .env ファイルのパス
+env_path = '.env'
+
+# .env ファイルが存在するか確認し、存在する場合は読み込む
+if os.path.exists(env_path):
+    with open(env_path) as f:
+        for line in f:
+            if line.startswith('#') or not line.strip():
+                continue  # コメント行または空行をスキップ
+            # 環境変数名と値を分割
+            key, value = line.strip().split('=', 1)
+            os.environ[key] = value  # 環境変数として設定
+
+# 環境変数を使用
+path = os.getenv('PATH')
+
+sys.path.append(path)
 
 # Sage Imports
 from sage.all import EllipticCurve, GF, ceil, Matrix, ZZ, Zmod, inverse_mod, PolynomialRing
@@ -36,6 +54,7 @@ for arg in sys.argv[1:]:
 NAME = "QFESTA_" + SECURITY
 
 uf.print_info(f"affine_dbl_iter Benchmarking {NAME}")
+N_Enc = 10000
 
 # set variables
 a, b1, b2, f, D1, D2 = pm.SysParam2(int(SECURITY))
@@ -94,8 +113,10 @@ pr.enable()
 # ===================== #
 #         Main          #
 # ===================== #
-D1 = da.affine_dbl_iter(h, u, v, strategy[0])
-# D2 = da.affine_dbl_iter([glueP2, glueQ2])
+# D1 = da.affine_dbl_iter(h, u, v, strategy[0])
+for _ in range(N_Enc):
+    D1 = da.affine_dbl_iter(h, u, v, 1)
+
 
 
 # ========================= #
