@@ -1,6 +1,7 @@
 import cProfile
 import pstats
 import time
+import csv
 import sys
 import os
 
@@ -22,21 +23,14 @@ path = os.getenv('PATH')
 
 sys.path.append(path)
 
-# Sage Imports
-from sage.all import EllipticCurve, GF, ceil, Matrix, ZZ, Zmod, inverse_mod, PolynomialRing
+from sage.all import EllipticCurve, GF, Matrix, ZZ, PolynomialRing
 
+# Import your specific modules
 import richelot_isogenies as ri
 import utilities.strategy as us
 import utilities_festa as uf
 import parameter_generate as pm
 import elliptic_curve as ec
-
-# ========================= #
-#       　   SetUp    　　   #
-# ========================= #
-
-# Sage goes vroom!
-uf.speed_up_sagemath()
 
 # Default is FESTA_128
 SECURITY = "128"
@@ -52,8 +46,6 @@ for arg in sys.argv[1:]:
 # PKE = FESTA
 NAME = "QFESTA_" + SECURITY
 N_Enc = 10
-
-uf.print_info(f"(2,2)-Isogeny Benchmarking {NAME}")
 
 # set variables
 a, b1, b2, f, D1, D2 = pm.SysParam2(int(SECURITY))
@@ -99,39 +91,97 @@ glueQ1 = E1(glueQ1)
 glueP2 = E2(glueP2)
 glueQ2 = E2(glueQ2)
 
+# Setup CSV
+data_dir = 'data'
+os.makedirs(data_dir, exist_ok=True)
+csv_path = os.path.join(data_dir, f'benchmark_results_{SECURITY}.csv')
+csv_file = open(csv_path, 'w', newline='')
+csv_writer = csv.writer(csv_file)
+csv_writer.writerow(['h_threshold', 'scale', 'execution_time', 'point_memory', 'map_num', 'DBL_num'])
 
-# strategy
+######################## Defalut OLD #########################
 strategy = us.optimised_strategy_old(b - 1, 0.175)
-# strategy = us.optimised_strategy(b - 1)
-# print(strategy)
 
-# 256
-# print(strategy)
-# strategy = [589, 141, 34, 7, 1, 6, 5, 4, 3, 2, 1, 27, 6, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 107, 27, 6, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 81, 20, 5, 4, 3, 2, 1, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 61, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 46, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 449, 107, 26, 6, 5, 4, 3, 2, 1, 20, 5, 4, 3, 2, 1, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 81, 20, 5, 4, 3, 2, 1, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 61, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 46, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 342, 81, 20, 5, 4, 3, 2, 1, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 61, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 46, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 261, 61, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 46, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 200, 46, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 154, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 119, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 92, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 71, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 55, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 43, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 34, 7, 1, 6, 5, 4, 3, 2, 1, 27, 6, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1]
-
-
-# ========================= #
-#      Start Profiling      #
-# ========================= #
-# Start the profiler
-setup_time = time.time()
+# Start profiling
+start_time = time.time()
 pr = cProfile.Profile()
 pr.enable()
 
-# ===================== #
-#         Main          #
-# ===================== #
+# Run the benchmark
 for _ in range(N_Enc):
-    chain, h = ri.split_richelot_chain(glueP1, glueQ1, glueP2, glueQ2, b, strategy)
-phi = chain
+    chain, h_ref = ri.split_richelot_chain(glueP1, glueQ1, glueP2, glueQ2, b, strategy)
 
-
-# ========================= #
-#       End Profiling       #
-# ========================= #
-
+# Stop profiling
 pr.disable()
-pr.dump_stats("festa_keygen.cProfile")
-uf.print_info(f"(2,2)-Isogeny took: {(time.time() -  setup_time):.3f} seconds")
-p = pstats.Stats("festa_keygen.cProfile")
-p.strip_dirs().sort_stats("cumtime").print_stats(50)
+elapsed_time = (time.time() - start_time)/N_Enc
+
+# Write the results to the CSV file
+csv_writer.writerow([0, 0, f"{elapsed_time:.3f}", 5, 2074, 6430])
+###########################################################
+
+
+######################## Defalut #########################
+strategy = us.optimised_strategy(b - 1)
+
+# Start profiling
+start_time = time.time()
+pr = cProfile.Profile()
+pr.enable()
+
+# Run the benchmark
+for _ in range(N_Enc):
+    chain, h_ref = ri.split_richelot_chain(glueP1, glueQ1, glueP2, glueQ2, b, strategy)
+
+# Stop profiling
+pr.disable()
+elapsed_time = (time.time() - start_time)/N_Enc
+
+# Write the results to the CSV file
+csv_writer.writerow([0, 0, f"{elapsed_time:.3f}", 11, 4072, 2826])
+###########################################################
+
+
+# Benchmarking
+h_thresholds = [3, 2, 1]
+scales =  [8, 7, 6.75, 6.5, 6.25, 6, 5.75, 5.5, 5.25, 5, 4.75, 4.5, 4.375, 4.25, 4.125, 4, 3.75, 3.5, 3.25, 3, 2.5, 2, 1.75, 1.5]
+# h_thresholds = [1]
+# scales =  [4]
+DBL_num = 0
+map_num = 0
+
+for h_threshold in h_thresholds:
+    for scale in scales:
+        # Setup the elliptic curve and strategy based on h_threshold and scale here
+        # This is just an example of how you might set it up
+        strategy, memory = us.my_strategy(b - 1, h_threshold, scale)
+        # Start profiling
+        start_time = time.time()
+        pr = cProfile.Profile()
+        pr.enable()
+        
+        # Run the benchmark
+        for _ in range(N_Enc):
+            chain, h = ri.split_richelot_chain(glueP1, glueQ1, glueP2, glueQ2, b, strategy)
+
+        if h != h_ref:
+            raise ValueError("h is not equal to h_ref")
+        
+        # Stop profiling
+        pr.disable()
+        pr.dump_stats("festa_keygen.cProfile")
+        elapsed_time = (time.time() - start_time)/N_Enc
+        p = pstats.Stats("festa_keygen.cProfile")
+        p.strip_dirs().sort_stats('cumulative').print_stats(10) # この行がないと以下のfunc_name[0]が絶対パスになる
+
+        for func_name, (cc, nc, tt, ct, callers) in p.stats.items():
+            # print(func_name, nc)
+            if func_name[0] == "richelot_isogenies.py" and func_name[1] == 194 and func_name[2] == "map":
+                map_num = nc/N_Enc
+                
+            if func_name[0] == "divisor_arithmetic.py" and func_name[1] == 218 and func_name[2] == "_dbl_divisor_generic":
+                DBL_num = nc/N_Enc
+
+        # Write the results to the CSV file
+        csv_writer.writerow([h_threshold, scale, f"{elapsed_time:.3f}", memory, map_num, DBL_num])
+
+csv_file.close()

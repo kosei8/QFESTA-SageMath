@@ -72,9 +72,11 @@ b = 390
 
 
 # strategy
-# strategy = us.optimised_strategy(b - 1)
-# points = 11
-strategy, points = us.my_strategy(b - 1, 1, 4)
+strategy = us.optimised_strategy_old(b - 1, 0.175)
+points = 5
+strategy = us.optimised_strategy(b - 1)
+points = 11
+# strategy, points = us.my_strategy(b - 1, 1, 4)
 # print(strategy)
 
 # 256
