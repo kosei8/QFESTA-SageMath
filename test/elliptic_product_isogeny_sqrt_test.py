@@ -1,5 +1,8 @@
-import os
+import cProfile
+import pstats
+import time
 import sys
+import os
 
 # .env ファイルのパス
 env_path = '.env'
@@ -27,6 +30,8 @@ import utilities.strategy as us
 import utilities_festa as uf
 import parameter_generate as pm
 import elliptic_curve as ec
+from theta_structures.couple_point import CouplePoint
+from theta_isogenies.product_isogeny_sqrt import EllipticProductIsogenySqrt
 
 # ========================= #
 #       　   SetUp    　　   #
@@ -48,8 +53,9 @@ for arg in sys.argv[1:]:
 
 # PKE = FESTA
 NAME = "QFESTA_" + SECURITY
+N_Enc = 1
 
-uf.print_info(f"Required points for strategy {NAME}")
+uf.print_info(f"(2,2)-Isogeny Benchmarking {NAME}")
 
 # set variables
 a, b1, b2, f, D1, D2 = pm.SysParam2(int(SECURITY))
@@ -95,25 +101,30 @@ glueQ1 = E1(glueQ1)
 glueP2 = E2(glueP2)
 glueQ2 = E2(glueQ2)
 
+kernel =[CouplePoint(glueP1, glueP2), CouplePoint(glueQ1, glueQ2)]
 
-# strategy
-strategy = us.optimised_strategy_old(b - 1, 0.175)
-points = 5
-print(strategy)
-strategy = us.optimised_strategy(b - 1)
-points = 11
-# strategy, points = us.my_strategy(b - 1, 1, 4)
-print(strategy)
 
-# 256
-# print(strategy)
-# strategy = [589, 141, 34, 7, 1, 6, 5, 4, 3, 2, 1, 27, 6, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 107, 27, 6, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 81, 20, 5, 4, 3, 2, 1, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 61, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 46, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 449, 107, 26, 6, 5, 4, 3, 2, 1, 20, 5, 4, 3, 2, 1, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 81, 20, 5, 4, 3, 2, 1, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 61, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 46, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 342, 81, 20, 5, 4, 3, 2, 1, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 61, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 46, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 261, 61, 15, 4, 3, 2, 1, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 46, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 200, 46, 11, 3, 2, 1, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 154, 35, 8, 2, 1, 6, 1, 5, 4, 3, 2, 1, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 119, 27, 6, 1, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 92, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 71, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 55, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 43, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1, 34, 7, 1, 6, 5, 4, 3, 2, 1, 27, 6, 5, 4, 3, 2, 1, 21, 5, 4, 3, 2, 1, 16, 4, 3, 2, 1, 12, 3, 2, 1, 9, 2, 1, 7, 1, 6, 5, 4, 3, 2, 1]
-
+# ========================= #
+#      Start Profiling      #
+# ========================= #
+# Start the profiler
+setup_time = time.time()
+pr = cProfile.Profile()
+pr.enable()
 
 # ===================== #
 #         Main          #
 # ===================== #
-chain, h, mem_num = ri.split_richelot_chain(glueP1, glueQ1, glueP2, glueQ2, b, strategy, True)
-phi = chain
-print(mem_num)
-print(points == mem_num)
+for _ in range(N_Enc):
+    phi = EllipticProductIsogenySqrt(kernel, b)
+
+
+# ========================= #
+#       End Profiling       #
+# ========================= #
+
+pr.disable()
+pr.dump_stats("festa_keygen.cProfile")
+uf.print_info(f"EllipticProductIsogenySqrt took: {(time.time() -  setup_time)/N_Enc:.3f} seconds")
+p = pstats.Stats("festa_keygen.cProfile")
+p.strip_dirs().sort_stats("cumtime").print_stats(50)

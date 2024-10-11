@@ -101,6 +101,13 @@ pr.enable()
 # ===================== #
 for _ in range(N_Enc):
     h_new, f = ri.FromJacToJac(h, D1, D2)
+    # print(h_new[6])
+    # print(h_new[5])
+    # print(h_new[4])
+    # print(h_new[3])
+    # print(h_new[2])
+    # print(h_new[1])
+    # print(h_new[0])
 
 # h, f = ri.FromJacToJac(h, D1, D2)
 

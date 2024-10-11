@@ -125,6 +125,7 @@ def affine_dbl_iter(f, u, v, n):
     x = u.parent().gen()
     udd = x*x + u1*x + u0
     vdd = v1*x + v0
+    udd = udd.monic()
     return udd, vdd
 
 # ================================== #

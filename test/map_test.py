@@ -107,7 +107,8 @@ pr.enable()
 #         Main          #
 # ===================== #
 for _ in range(N_Enc):
-    new_kernel_elements = [(f(D1), f(D2)) for D1, D2 in kernel_elements]
+    # new_kernel_elements = [(f(D1), f(D2)) for D1, D2 in kernel_elements]
+    new_kernel_elements = [(f(D1), _ ) for D1, _ in kernel_elements]
 # kernel_elements = [(f(D1), f(D2)) for D1, D2 in kernel_elements]
 
 

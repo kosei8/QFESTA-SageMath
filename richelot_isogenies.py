@@ -249,6 +249,9 @@ class RichelotCorr:
         Py = (- Py1inv * (Py2 * self.hnew + Py0)) % Px
 
         Dx = ((self.hnew - Py*Py) // Px)
+        ##############################
+        Dx = Dx.monic()
+        ##############################
         Dy = (-Py) % Dx
         return (Dx, Dy)
 
@@ -592,6 +595,10 @@ def split_richelot_chain(P, Q, R, S, a, strategy, points=False):
 
     # Now we are left with a quadratic splitting: is it singular?
     D1, D2 = kernel_elements[-1]
+    print("D1",D1[0][0])
+    # print("D1 1",D1[1])
+    print("D2",D2[0][0])
+    # print("D2 1",D2[1])
     G1, G2 = D1[0], D2[0]
     G3, r3 = h.quo_rem(G1 * G2)
     assert r3 == 0
