@@ -36,6 +36,15 @@ from sage.all import (
     Matrix,
 )
 
+import sys
+import os
+
+# FPGA env
+path = os.getenv('PATH')
+sys.path.append(path)
+
+import richelot_isogeny_fpga as rif
+
 # local imports
 from divisor_arithmetic import affine_dbl_iter, affine_add
 from supersingular import weil_pairing_pari
@@ -506,7 +515,7 @@ def _check_maximally_isotropic(P, Q, R, S, a):
 
     return True, two_torsion
 
-def split_richelot_chain(P, Q, R, S, a, strategy, points=False):
+def split_richelot_chain(Fp2d, P, Q, R, S, a, strategy, device_w, device_r, fpga_w_fd, fpga_r_fd, accelerate, points=False):
     r"""
     Given curves C, E and points (P, Q) \in E
                                  (R, S) \in E'
@@ -556,6 +565,13 @@ def split_richelot_chain(P, Q, R, S, a, strategy, points=False):
     kernel_elements = [ker]
     memory_points = 0
 
+    # FPGA write
+    if accelerate:
+        rif.print_input_data(ker, h)
+        ker, h = rif.decompose_and_reconstruct(ker, h, Fp2d)
+        rif.print_input_data(ker, h)
+        rif.richelot_isogeny_fpga(device_w, device_r, fpga_w_fd, fpga_r_fd, ker)
+
     # ======================================= #
     #  Middle Steps                           #
     #  Jacobian ---> Jacobian                 #
@@ -595,9 +611,9 @@ def split_richelot_chain(P, Q, R, S, a, strategy, points=False):
 
     # Now we are left with a quadratic splitting: is it singular?
     D1, D2 = kernel_elements[-1]
-    print("D1",D1[0][0])
+    # print("D1",D1[0][0])
     # print("D1 1",D1[1])
-    print("D2",D2[0][0])
+    # print("D2",D2[0][0])
     # print("D2 1",D2[1])
     G1, G2 = D1[0], D2[0]
     G3, r3 = h.quo_rem(G1 * G2)

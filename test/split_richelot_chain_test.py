@@ -3,6 +3,7 @@ import pstats
 import time
 import sys
 import os
+import argparse
 
 # .env ファイルのパス
 env_path = '.env'
@@ -31,9 +32,37 @@ import utilities_festa as uf
 import parameter_generate as pm
 import elliptic_curve as ec
 
+# FPGA driver definitions
+DEVICE_NAME_W = "/dev/xdma0_h2c_0"
+DEVICE_NAME_R = "/dev/xdma0_c2h_0"
+
 # ========================= #
 #       　   SetUp    　　   #
 # ========================= #
+
+# Parse command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("-a", "--accelerate", action="store_true",
+                    help="Enable FPGA acceleration")
+args = parser.parse_args()
+
+# FPGA setup
+device_w = DEVICE_NAME_W
+device_r = DEVICE_NAME_R
+
+# Open the FPGA device for writing
+try:
+    fpga_w_fd = os.open(device_w, os.O_RDWR)
+except OSError as e:
+    print(f"Unable to open device {device_w}: {e}", file=sys.stderr)
+    sys.exit(1)
+
+# Open the FPGA device for reading
+try:
+    fpga_r_fd = os.open(device_r, os.O_RDWR)
+except OSError as e:
+    print(f"Unable to open device {device_r}: {e}", file=sys.stderr)
+    sys.exit(1)
 
 # Sage goes vroom!
 uf.speed_up_sagemath()
@@ -51,9 +80,9 @@ for arg in sys.argv[1:]:
 
 # PKE = FESTA
 NAME = "QFESTA_" + SECURITY
-N_Enc = 10
+N_Enc = 1
 
-uf.print_info(f"(2,2)-Isogeny Benchmarking {NAME}")
+uf.print_info(f"(2,2)-Isogeny Benchmarking {NAME}: acceletate = {args.accelerate}")
 
 # set variables
 a, b1, b2, f, D1, D2 = pm.SysParam2(int(SECURITY))
@@ -122,13 +151,17 @@ pr.enable()
 #         Main          #
 # ===================== #
 for _ in range(N_Enc):
-    chain, h = ri.split_richelot_chain(glueP1, glueQ1, glueP2, glueQ2, b, strategy)
+    chain, h = ri.split_richelot_chain(Fp2d, glueP1, glueQ1, glueP2, glueQ2, b, strategy, device_w, device_r, fpga_w_fd, fpga_r_fd, accelerate=args.accelerate)
 phi = chain
 
 
 # ========================= #
 #       End Profiling       #
 # ========================= #
+
+# FPGA close
+os.close(fpga_w_fd)
+os.close(fpga_r_fd)
 
 pr.disable()
 pr.dump_stats("festa_keygen.cProfile")
